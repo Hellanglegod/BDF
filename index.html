@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="11th Annual Women Power Summit & Awards 2026 — 23rd May, NSE Mumbai. Register, nominate, and pitch. Powered by Billennium Divas."/>
+  <title>Women Power Summit & Awards 2026 | Billennium Divas</title>
+  <link rel="icon" href="assets/img/favicon.png" type="image/png"/>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     NAVIGATION
+     ══════════════════════════════════════ -->
+<nav id="nav">
+  <div class="nav-inner">
+    <div class="nav-logo">
+      <img src="assets/img/logo.png" alt="Billennium Divas"
+        onerror="this.src='https://www.womenpowersummit.in/assets/img/logo/Logo%20Full%20Color.png';this.onerror=null;"/>
+      <div class="nav-logo-copy">
+        <strong>Women Power Summit &amp; Awards 2026</strong>
+        <span>#WPSA2026 · Billennium Divas</span>
+      </div>
+    </div>
+    <div class="nav-links">
+      <button class="nav-link" data-page="home">Home</button>
+      <button class="nav-link" data-page="location">Location</button>
+      <button class="nav-link" data-page="partners">Partners</button>
+      <button class="nav-link" data-page="register">Register</button>
+    </div>
+    <div class="nav-actions">
+      <button class="btn btn-ghost btn-sm" id="nav-auth-btn">Sign In</button>
+      <button class="btn btn-gold btn-sm" id="nav-cta">Apply Now</button>
+      <button class="nav-hamburger" id="nav-hamburger" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <div class="nav-mobile-menu" id="nav-mobile-menu">
+    <button class="nav-mobile-link" data-page="home">Home</button>
+    <button class="nav-mobile-link" data-page="location">Location</button>
+    <button class="nav-mobile-link" data-page="partners">Partners</button>
+    <button class="nav-mobile-link" data-page="register">Register</button>
+    <button class="btn btn-gold" style="margin-top:12px;width:100%;" onclick="showPage('register');document.getElementById('nav-mobile-menu').classList.remove('open');document.getElementById('nav-hamburger').classList.remove('open');">Apply Now →</button>
+  </div>
+</nav>
+
+
+<!-- ══════════════════════════════════════
+     PAYMENT MODAL
+     ══════════════════════════════════════ -->
+<div class="modal-overlay" id="payment-modal">
+  <div class="modal-box">
+    <button class="modal-close" id="pay-close">✕</button>
+    <div class="ornament orn-sm" style="margin-bottom:18px;">
+      <span class="orn-line"></span><span class="orn-dot"></span><span class="orn-line r"></span>
+    </div>
+    <h2 class="modal-title">Secure Payment</h2>
+    <p class="modal-sub">Complete your WPSA 2026 registration payment</p>
+
+    <div class="modal-summary">
+      <div class="modal-row"><span class="ml">Registrant</span><span class="mv" id="pm-name">—</span></div>
+      <div class="modal-row"><span class="ml">Pass Type</span><span class="mv" id="pm-pass">—</span></div>
+      <div class="modal-row"><span class="ml">Quantity</span><span class="mv" id="pm-qty">—</span></div>
+      <div class="modal-row total"><span class="ml">Total</span><span class="mv" id="pm-total">—</span></div>
+    </div>
+
+    <div id="pay-form">
+      <p style="font-size:.75rem;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:12px;">Payment Method</p>
+      <div class="pay-methods">
+        <div class="pay-method" data-m="upi"><div class="pay-method-icon">📱</div><div class="pay-method-name">UPI</div></div>
+        <div class="pay-method" data-m="card"><div class="pay-method-icon">💳</div><div class="pay-method-name">Card</div></div>
+        <div class="pay-method" data-m="bank"><div class="pay-method-icon">🏦</div><div class="pay-method-name">Net Banking</div></div>
+      </div>
+
+      <!-- UPI -->
+      <div id="pay-upi" class="pay-fields">
+        <div class="field"><label>UPI ID</label><input type="text" placeholder="yourname@upi"/></div>
+        <p style="font-size:.8125rem;color:var(--txt4);">Or scan QR to pay: <strong style="color:var(--gold);">billenniumdivas@upi</strong></p>
+      </div>
+      <!-- Card -->
+      <div id="pay-card" class="pay-fields" style="display:none;">
+        <div class="field"><label>Card Number</label><input type="text" placeholder="1234 5678 9012 3456" maxlength="19"/></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="field"><label>Expiry</label><input type="text" placeholder="MM / YY" maxlength="7"/></div>
+          <div class="field"><label>CVV</label><input type="text" placeholder="•••" maxlength="4"/></div>
+        </div>
+        <div class="field"><label>Name on Card</label><input type="text" placeholder="Cardholder name"/></div>
+      </div>
+      <!-- Bank -->
+      <div id="pay-bank" class="pay-fields" style="display:none;">
+        <div class="field"><label>Select Bank</label>
+          <select>
+            <option value="">Choose your bank…</option>
+            <option>SBI</option><option>HDFC Bank</option><option>ICICI Bank</option>
+            <option>Axis Bank</option><option>Kotak Mahindra Bank</option>
+            <option>Bank of Baroda</option><option>PNB</option><option>Union Bank</option><option>Other</option>
+          </select>
+        </div>
+      </div>
+
+      <p class="pay-note">🔒 Demo payment environment — no real charges. Replace with Razorpay / PayU / Cashfree in production.</p>
+      <button class="btn btn-gold btn-full" id="pay-confirm">Pay &amp; Confirm Registration →</button>
+    </div>
+
+    <div class="pay-processing" id="pay-spin" style="display:none;">
+      <span class="pay-spin">⟳</span>
+      <h3 style="font-family:'Playfair Display',serif;font-size:1.25rem;color:var(--white);margin-bottom:8px;">Processing…</h3>
+      <p>Please wait. Do not close this window.</p>
+    </div>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     AUTH MODAL (Login / Register)
+     ══════════════════════════════════════ -->
+<div class="modal-overlay" id="auth-modal" data-mode="login">
+  <div class="modal-box">
+    <button class="modal-close" id="auth-close">✕</button>
+    <div class="ornament orn-sm" style="margin-bottom:18px;">
+      <span class="orn-line"></span><span class="orn-dot"></span><span class="orn-line r"></span>
+    </div>
+    <h2 class="modal-title" id="auth-modal-title">Sign In to Continue</h2>
+    <p class="modal-sub" id="auth-modal-sub">Log in to access your registration or apply for WPSA 2026.</p>
+
+    <div id="auth-name-row" class="form-grid" style="display:none;margin-bottom:0;">
+      <div class="field"><label for="auth-fname">First Name <span class="req">*</span></label><input type="text" id="auth-fname" placeholder="Priya" autocomplete="given-name"/></div>
+      <div class="field"><label for="auth-lname">Last Name <span class="req">*</span></label><input type="text" id="auth-lname" placeholder="Sharma" autocomplete="family-name"/></div>
+    </div>
+    <div class="field" style="margin-top:14px;">
+      <label for="auth-email">Email Address <span class="req">*</span></label>
+      <input type="email" id="auth-email" placeholder="you@example.com" autocomplete="email"/>
+    </div>
+    <div class="field" style="margin-top:14px;margin-bottom:6px;">
+      <label for="auth-pass">Password <span class="req">*</span></label>
+      <input type="password" id="auth-pass" placeholder="Min. 6 characters" autocomplete="current-password"/>
+    </div>
+    <p id="auth-err" style="display:none;color:var(--red);font-size:.8125rem;margin-bottom:12px;line-height:1.6;"></p>
+    <button class="btn btn-gold btn-full" id="auth-submit-btn" style="margin-top:10px;">Sign In →</button>
+    <p id="auth-toggle-text" style="text-align:center;font-size:.8125rem;color:var(--txt3);margin-top:16px;">
+      New here? <button class="auth-toggle-link" id="auth-switch-reg">Create a free account</button>
+    </p>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     PAGE: HOME
+     ══════════════════════════════════════ -->
+<div id="page-home" class="page">
+
+  <!-- Hero -->
+  <section id="hero">
+    <div class="hero-bg">
+      <img src="assets/img/hero-banner.jpg" alt="Women Power Summit 2026"
+        onerror="this.src='https://www.womenpowersummit.in/assets/img/new_images/21.jpeg';this.onerror=null;"/>
+    </div>
+    <div class="hero-inner">
+      <div class="hero-kicker">Powered by Billennium Divas · 11th Annual Edition · #WPSA2026</div>
+      <div class="ornament" style="margin-bottom:16px;">
+        <span class="orn-line"></span><span class="orn-dot"></span><span class="orn-line r"></span>
+      </div>
+      <h1 class="hero-title">Women <em>Power</em> Summit<br>&amp; Awards 2026</h1>
+      <div class="hero-tags">#BreakFree &nbsp;·&nbsp; #BeThePower</div>
+      <div class="hero-theme">Theme: "Collective Power, Shared Progress"</div>
+      <div class="hero-meta">
+        <span class="hero-meta-item"><span class="bullet"></span>Saturday, 23rd May 2026</span>
+        <span class="hero-meta-item"><span class="bullet"></span>09:30 AM – 06:00 PM IST</span>
+        <span class="hero-meta-item"><span class="bullet"></span>NSE, Bandra Kurla Complex, Mumbai</span>
+        <span class="hero-meta-item"><span class="bullet"></span>250+ Entrepreneurs · 35+ Speakers</span>
+      </div>
+      <div class="hero-actions">
+        <button class="btn btn-gold btn-lg" id="hero-apply">Apply for Awards — ₹4,499</button>
+        <button class="btn btn-outline btn-lg" id="hero-schedule"><span>View Schedule</span></button>
+      </div>
+    </div>
+  </section>
+
+  <!-- Stats -->
+  <div id="stats">
+    <div class="stats-inner">
+      <div class="stat-item"><div class="stat-num">35+</div><div class="stat-label">Speakers</div></div>
+      <div class="stat-item"><div class="stat-num">40</div><div class="stat-label">Award Categories</div></div>
+      <div class="stat-item"><div class="stat-num">250+</div><div class="stat-label">Entrepreneurs</div></div>
+      <div class="stat-item"><div class="stat-num">10</div><div class="stat-label">Startup Pitches</div></div>
+      <div class="stat-item"><div class="stat-num">1</div><div class="stat-label">Full Day</div></div>
+      <div class="stat-item"><div class="stat-num">11th</div><div class="stat-label">Annual Edition</div></div>
+    </div>
+  </div>
+
+  <!-- Countdown -->
+  <div id="countdown">
+    <div class="cd-label">Summit begins in</div>
+    <div class="countdown-row">
+      <div class="cd-unit-block"><div class="cd-num" id="cd-d">00</div><div class="cd-name">Days</div></div>
+      <div class="cd-sep">:</div>
+      <div class="cd-unit-block"><div class="cd-num" id="cd-h">00</div><div class="cd-name">Hours</div></div>
+      <div class="cd-sep">:</div>
+      <div class="cd-unit-block"><div class="cd-num" id="cd-m">00</div><div class="cd-name">Mins</div></div>
+      <div class="cd-sep">:</div>
+      <div class="cd-unit-block"><div class="cd-num" id="cd-s">00</div><div class="cd-name">Secs</div></div>
+    </div>
+  </div>
+
+  <!-- About -->
+  <section class="section" id="about">
+    <div class="container">
+      <div class="section-header">
+        <span class="eyebrow">About the Summit</span>
+        <h2>Championing Women. Celebrating Excellence.</h2>
+        <p>The 11th Annual Women Power Summit &amp; Awards is a highly process-driven recognition and a neutral platform to celebrate business excellence, with 30 award categories for women entrepreneurs and 10 award categories for ecosystem enablers — evaluated through a stringent, transparent jury process.</p>
+      </div>
+      <div class="about-grid">
+        <div class="about-card">
+          <h3>Our Mission</h3>
+          <p>To understand and address challenges faced by women entrepreneurs and celebrate excellence across MSMEs, startups, and ecosystem enablers through a rigorous, fair recognition platform.</p>
+        </div>
+        <div class="about-card">
+          <h3>40 Award Categories</h3>
+          <p>30 categories exclusively for women entrepreneurs / women-led startups + 10 open categories for startup ecosystem enablers — recognising impact across every sector of India's economy.</p>
+        </div>
+        <div class="about-card">
+          <h3>Organised by Billennium Divas</h3>
+          <p>Founded in 2017, Billennium Divas Private Limited is India's premier community for women entrepreneurs and changemakers, dedicated to driving inclusive growth and equitable societal progress.</p>
+        </div>
+        <div class="about-card">
+          <h3>Key Dates</h3>
+          <p>
+            <strong>Nomination Deadline:</strong> 2nd May 2026<br/>
+            <strong>Top 3 Shortlist Announced:</strong> 11th May 2026<br/>
+            <strong>Pitch Deck Upload Deadline:</strong> 15th May 2026<br/>
+            <strong>Award Ceremony:</strong> 23rd May 2026 · NSE Mumbai
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Award Categories -->
+  <section class="section" id="awards">
+    <div class="container">
+      <div class="section-header">
+        <span class="eyebrow">Award Categories</span>
+        <h2>40 Categories Across Every Sector</h2>
+        <p>30 categories for women entrepreneurs &amp; women-led startups · 10 open categories for startup ecosystem enablers.</p>
+      </div>
+      <div class="filter-row">
+        <button class="filter-btn active" data-filter="all">All 40</button>
+        <button class="filter-btn" data-filter="women">Women Entrepreneurs (30)</button>
+        <button class="filter-btn" data-filter="eco">Ecosystem Enablers (10)</button>
+      </div>
+      <div class="award-cloud" id="award-cloud"></div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Schedule -->
+  <section class="section" id="schedule">
+    <div class="container">
+      <div class="section-header">
+        <span class="eyebrow">Event Schedule</span>
+        <h2>23rd May 2026 — Full Day Agenda</h2>
+        <p>Saturday · NSE Mumbai · 09:30 AM – 06:00 PM IST</p>
+      </div>
+      <div class="schedule-list" id="schedule-list"></div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Jury -->
+  <section class="section" id="jury">
+    <div class="container">
+      <div class="section-header">
+        <span class="eyebrow">Esteemed Jury</span>
+        <h2>Meet the Jury Panel</h2>
+        <p>An elite panel of investors, entrepreneurs, and industry leaders ensuring transparent, rigorous evaluation across all 40 award categories.</p>
+      </div>
+      <div class="jury-grid" id="jury-grid"></div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Gallery -->
+  <section class="section" id="gallery">
+    <div class="container">
+      <div class="section-header">
+        <span class="eyebrow">Gallery</span>
+        <h2>Moments from Past Editions</h2>
+      </div>
+      <div class="gallery-grid" id="gallery-grid"></div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <!-- Pricing -->
+  <section class="section" id="pricing">
+    <div class="container">
+      <div class="section-header" style="text-align:center;">
+        <span class="eyebrow">Nomination Fees</span>
+        <h2>Award Application &amp; What's Included</h2>
+      </div>
+      <div class="price-card">
+        <div class="price-big">₹4,499</div>
+        <p class="price-meta">Per Award Category · Non-Refundable · Up to 5 categories per individual</p>
+        <div class="price-date-row">
+          <div><div class="price-date-val">2nd May</div><div class="price-date-lbl">Nomination Deadline</div></div>
+          <div><div class="price-date-val">11th May</div><div class="price-date-lbl">Top 3 Announced</div></div>
+          <div><div class="price-date-val">23rd May</div><div class="price-date-lbl">Ceremony @ NSE</div></div>
+        </div>
+        <ul class="price-list">
+          <li>One Complimentary All-Access Pass per category — attend irrespective of winning</li>
+          <li>6 Months Individual Membership to Billennium Divas Women Entrepreneurs Community (subject to approval)</li>
+          <li>Networking with 250+ women entrepreneurs, investors, mentors &amp; ecosystem enablers</li>
+          <li>Access to Fireside Chats, Panel Discussions, PitchPower sessions &amp; Awards Ceremony</li>
+          <li>Stringent jury evaluation — fully transparent process with fairplay guaranteed</li>
+        </ul>
+        <button class="btn btn-gold btn-full" id="pricing-apply">Apply Now — ₹4,499 per category</button>
+        <p class="price-note">Payment via Cheque / Demand Draft / Online Transfer payable to Billennium Divas Private Limited</p>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /page-home -->
+
+
+<!-- ══════════════════════════════════════
+     PAGE: LOCATION
+     ══════════════════════════════════════ -->
+<div id="page-location" class="page">
+
+  <section class="section" id="venue">
+    <div class="container">
+      <div class="section-header">
+        <span class="eyebrow">Venue</span>
+        <h2>National Stock Exchange of India</h2>
+        <p>NSE, Bandra Kurla Complex — India's premier financial hub and the iconic venue of the Women Power Summit for multiple years running.</p>
+      </div>
+      <!-- FIXED: correct NSE BKC Mumbai embed -->
+      <div class="map-frame">
+        <iframe
+          src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3771.4278397085565!2d72.86247937489856!3d19.061697250021547!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3be7c9c576f01a01%3A0x68bb70c8aa2dbd27!2sNational%20Stock%20Exchange%20of%20India%20Ltd.!5e0!3m2!1sen!2sin!4v1715000000000!5m2!1sen!2sin"
+          allowfullscreen=""
+          loading="lazy"
+          referrerpolicy="no-referrer-when-downgrade"
+          title="NSE National Stock Exchange of India, BKC Mumbai">
+        </iframe>
+      </div>
+      <div class="venue-grid">
+        <div class="venue-card">
+          <div class="venue-card-eyebrow">Venue Address</div>
+          <p>National Stock Exchange of India Ltd.</p>
+          <p>Exchange Plaza, C-1, Block G</p>
+          <p>Bandra Kurla Complex, Bandra (East)</p>
+          <p>Mumbai, Maharashtra — 400 051</p>
+          <br/>
+          <p><a href="https://maps.app.goo.gl/5KM4nm3PvkxigbP7A" target="_blank" rel="noopener">View on Google Maps →</a></p>
+        </div>
+        <div class="venue-card">
+          <div class="venue-card-eyebrow">Event Timings</div>
+          <p><strong>Date:</strong> Saturday, 23rd May 2026</p>
+          <p><strong>Doors Open:</strong> 09:30 AM IST</p>
+          <p><strong>Programme:</strong> 10:30 AM – 06:00 PM IST</p>
+          <p><strong>Power Networking:</strong> 05:30 PM onwards</p>
+          <br/>
+          <p style="font-size:.875rem;color:var(--txt4);">Dress Code: Business Formal / Business Casual</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section class="section" id="getting-there">
+    <div class="container">
+      <div class="section-header">
+        <span class="eyebrow">Getting There</span>
+        <h2>How to Reach NSE, BKC</h2>
+      </div>
+      <div class="reach-grid">
+        <div class="reach-card">
+          <div class="reach-icon">🚇</div>
+          <div class="reach-title">By Metro</div>
+          <p class="reach-text">BKC Station on Metro Line 2A &amp; 7 — just a 5-minute walk to NSE. The most convenient option; avoids BKC traffic entirely. Highly recommended.</p>
+        </div>
+        <div class="reach-card">
+          <div class="reach-icon">🚗</div>
+          <div class="reach-title">By Road / Cab</div>
+          <p class="reach-text">Via Western Express Highway or Eastern Freeway. Ample parking available at BKC. Book Uber/Ola to drop at NSE Exchange Plaza Gate.</p>
+        </div>
+        <div class="reach-card">
+          <div class="reach-icon">✈️</div>
+          <div class="reach-title">From Airport</div>
+          <p class="reach-text">Chhatrapati Shivaji Maharaj International Airport is ~8 km away. Allow 20–40 minutes by taxi depending on traffic. Pre-book for event day.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section class="section" id="stays">
+    <div class="container">
+      <div class="section-header">
+        <span class="eyebrow">For Outstation Delegates</span>
+        <h2>Nearby Accommodations</h2>
+      </div>
+      <div class="reach-grid">
+        <div class="reach-card">
+          <div class="reach-title">Trident BKC</div>
+          <p class="reach-text">Bandra Kurla Complex · Walking distance · Preferred hotel for corporate delegations. Book early as BKC hotels fill fast.</p>
+        </div>
+        <div class="reach-card">
+          <div class="reach-title">The St. Regis Mumbai</div>
+          <p class="reach-text">Lower Parel · ~15 minutes · 5-star property ideal for outstation attendees wanting premium comfort and proximity.</p>
+        </div>
+        <div class="reach-card">
+          <div class="reach-title">Hyatt Regency Mumbai</div>
+          <p class="reach-text">Andheri East · ~20 minutes · Close to the airport, great value for delegates arriving the evening before the summit.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /page-location -->
+
+
+<!-- ══════════════════════════════════════
+     PAGE: PARTNERS
+     ══════════════════════════════════════ -->
+<div id="page-partners" class="page">
+
+  <section class="section" id="partner-list-section">
+    <div class="container">
+      <div class="section-header">
+        <span class="eyebrow">Partners &amp; Ecosystem</span>
+        <h2>Powered by a Strong Ecosystem</h2>
+        <p>WPSA 2026 is made possible through the support of knowledge partners, investors, community allies, and ecosystem enablers who share Billennium Divas' mission of inclusive growth.</p>
+      </div>
+      <div id="partner-tiers"></div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section class="section" id="community">
+    <div class="container">
+      <div class="section-header">
+        <span class="eyebrow">Community</span>
+        <h2>Follow &amp; Stay Connected</h2>
+        <p>Join the Billennium Divas community across platforms for the latest news, announcements, and event highlights.</p>
+      </div>
+      <div class="social-links" id="social-links-wrap"></div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section class="section" id="become-partner">
+    <div class="container">
+      <div style="max-width:560px;margin:0 auto;text-align:center;padding:32px;border:1px solid var(--gold-lt);border-radius:var(--r-lg);background:rgba(201,149,42,0.03);">
+        <span class="eyebrow">Sponsorship &amp; Partnerships</span>
+        <h2 style="font-size:1.8rem;margin-bottom:12px;">Become a Partner</h2>
+        <p>Interested in sponsoring, exhibiting, or partnering at WPSA 2026? Get visibility in front of 250+ women entrepreneurs, investors, and ecosystem leaders at NSE Mumbai.</p>
+        <div style="margin-top:22px;">
+          <a href="mailto:connect@billenniumdivas.fund" class="btn btn-outline"><span>📧 Contact for Partnership</span></a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div><!-- /page-partners -->
+
+
+<!-- ══════════════════════════════════════
+     PAGE: REGISTER
+     ══════════════════════════════════════ -->
+<div id="page-register" class="page">
+  <div class="container" style="padding-top:48px;padding-bottom:80px;">
+
+    <!-- Form wrapper + sidebar layout -->
+    <div id="reg-form-wrap">
+      <div class="reg-layout">
+
+        <!-- ── LEFT: FORM ── -->
+        <div class="reg-main">
+
+          <!-- STEP 1: PERSONAL DETAILS -->
+          <div class="form-step">
+            <div class="step-eyebrow">Step 1 — Your Details</div>
+            <h2 style="font-family:'Playfair Display',serif;font-size:1.8rem;font-weight:600;color:var(--white);margin-bottom:24px;">Register for WPSA 2026</h2>
+            <div class="form-grid">
+              <div class="field" id="w-fn"><label for="f-fn">First Name <span class="req">*</span></label><input id="f-fn" type="text" placeholder="Priya" autocomplete="given-name"/><span class="field-err">Please enter your first name</span></div>
+              <div class="field" id="w-ln"><label for="f-ln">Last Name <span class="req">*</span></label><input id="f-ln" type="text" placeholder="Sharma" autocomplete="family-name"/><span class="field-err">Please enter your last name</span></div>
+              <div class="field" id="w-em"><label for="f-em">Email Address <span class="req">*</span></label><input id="f-em" type="email" placeholder="priya@company.com" autocomplete="email"/><span class="field-err">Enter a valid email address</span></div>
+              <div class="field" id="w-ph"><label for="f-ph">Phone Number <span class="req">*</span></label><input id="f-ph" type="tel" placeholder="+91 98765 43210" autocomplete="tel"/><span class="field-err">Please enter your phone number</span></div>
+              <div class="field" id="w-org"><label for="f-org">Organisation / Company <span class="req">*</span></label><input id="f-org" type="text" placeholder="Your company or institution" autocomplete="organization"/><span class="field-err">Please enter your organisation</span></div>
+              <div class="field" id="w-des"><label for="f-des">Designation <span class="req">*</span></label><input id="f-des" type="text" placeholder="CEO, Founder, Director…" autocomplete="organization-title"/><span class="field-err">Please enter your designation</span></div>
+              <div class="field" id="w-cty"><label for="f-cty">City &amp; State <span class="req">*</span></label><input id="f-cty" type="text" placeholder="Mumbai, Maharashtra" autocomplete="address-level2"/><span class="field-err">Please enter your city and state</span></div>
+              <div class="field" id="w-sec"><label for="f-sec">Industry / Sector <span class="req">*</span></label>
+                <select id="f-sec">
+                  <option value="">Select your industry…</option>
+                  <option>Technology (AI / ML / SaaS)</option><option>HealthTech &amp; Wellness</option>
+                  <option>FinTech</option><option>EduTech</option><option>AgriTech</option>
+                  <option>D2C / Retail</option><option>Manufacturing</option>
+                  <option>Food &amp; Beverage</option><option>Fashion &amp; Lifestyle</option>
+                  <option>Media &amp; Entertainment</option><option>Digital Media &amp; Content</option>
+                  <option>Transportation &amp; Logistics</option><option>MICE (Events &amp; Hospitality)</option>
+                  <option>Legal &amp; Compliance</option><option>Recruitment &amp; HR</option>
+                  <option>Public Relations</option><option>Arts &amp; Craft</option>
+                  <option>Fitness &amp; Holistic Healing</option><option>Social Entrepreneurship</option>
+                  <option>Community Building</option><option>Education</option><option>Other</option>
+                </select>
+                <span class="field-err">Please select your industry</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- STEP 2: PASS TYPE -->
+          <div class="form-step">
+            <div class="step-eyebrow">Step 2 — Choose Your Pass</div>
+            <h2 style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:600;color:var(--white);margin-bottom:20px;">Select a Registration Type</h2>
+            <div class="ticket-stack" id="ticket-stack">
+
+              <div class="ticket-card" data-ticket="award">
+                <div class="ticket-radio"></div>
+                <div class="ticket-body">
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                    <div class="ticket-name">Award Nomination</div>
+                    <span class="badge badge-gold">Most Popular</span>
+                  </div>
+                  <div class="ticket-desc">Nominate yourself or your venture across any of the 40 award categories. One complimentary all-access pass included per category. Jury evaluation is fully transparent and process-driven.</div>
+                  <div class="ticket-price"><sub>₹</sub>4,499 <small>per category · up to 5 categories</small></div>
+                </div>
+              </div>
+
+              <div class="ticket-card" data-ticket="delegate">
+                <div class="ticket-radio"></div>
+                <div class="ticket-body">
+                  <div class="ticket-name">Delegate Pass</div>
+                  <div class="ticket-desc">Full-day summit access — all keynote addresses, panel discussions, Power Lunch networking &amp; gala awards ceremony at NSE Mumbai. Ideal for attendees who want to participate without an award nomination.</div>
+                  <div class="ticket-price"><sub>₹</sub>4,999 <small>per person · full-day access</small></div>
+                </div>
+              </div>
+
+              <div class="ticket-card" data-ticket="startup">
+                <div class="ticket-radio"></div>
+                <div class="ticket-body">
+                  <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px;">
+                    <div class="ticket-name">PitchPower — Startup</div>
+                    <span class="badge badge-rose">Startups Only</span>
+                  </div>
+                  <div class="ticket-desc">10-minute live pitch to a panel of marquee investors. Top 10 curated, pre-screened startups selected. Upload your pitch deck after registration. Delegate access included.</div>
+                  <div class="ticket-price"><sub>₹</sub>5,000 <small>per startup · includes delegate access</small></div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+          <!-- STEP 3: AWARD CATEGORIES (only for 'award' ticket) -->
+          <div class="form-step" id="step-awards" style="display:none;">
+            <div class="step-eyebrow">Step 3 — Award Categories</div>
+            <h2 style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:600;color:var(--white);margin-bottom:12px;">Select Your Categories</h2>
+            <div class="award-req-note">
+              ⚠ Award categories are required for this pass. Select at least 1 (maximum 5). Each category = ₹4,499.
+            </div>
+            <p style="font-size:.9375rem;color:var(--txt3);margin-bottom:20px;line-height:1.7;">Browse by sector and select all categories relevant to your work. Our jury team will guide you to the best fit during evaluation.</p>
+            <!-- Populated by JS renderRegAwards() -->
+            <div class="award-sectors" id="award-sectors-reg"></div>
+          </div>
+
+          <!-- STEP 4: FINAL DETAILS -->
+          <div class="form-step">
+            <div class="step-eyebrow">Step 4 — Final Details</div>
+            <h2 style="font-family:'Playfair Display',serif;font-size:1.6rem;font-weight:600;color:var(--white);margin-bottom:20px;">Almost There</h2>
+            <div class="form-grid">
+              <div class="field col2"><label for="f-ref">How did you hear about WPSA 2026?</label>
+                <select id="f-ref">
+                  <option value="">Select…</option>
+                  <option>Social Media (Instagram / LinkedIn)</option>
+                  <option>Referred by a Friend / Colleague</option>
+                  <option>Billennium Divas Community</option>
+                  <option>Email / Newsletter</option>
+                  <option>News Article / Press Coverage</option>
+                  <option>Previous Edition (WPSA 2025)</option>
+                  <option>Other</option>
+                </select>
+              </div>
+              <div class="field col2"><label for="f-notes">Special Requirements (optional)</label>
+                <textarea id="f-notes" placeholder="Dietary needs, accessibility requirements, questions for the organising team…"></textarea>
+              </div>
+            </div>
+            <div class="check-group">
+              <div class="check-row">
+                <input type="checkbox" id="f-terms"/>
+                <label for="f-terms">I agree to the <a href="https://event.billenniumdivas.fund" target="_blank">Terms &amp; Conditions</a> and <a href="https://event.billenniumdivas.fund" target="_blank">Privacy Policy</a> of the 11th Annual Women Power Summit &amp; Awards 2026 by Billennium Divas Private Limited.</label>
+              </div>
+              <div class="check-row">
+                <input type="checkbox" id="f-news" checked/>
+                <label for="f-news">Keep me informed about future Billennium Divas events, community updates, and women entrepreneurship initiatives.</label>
+              </div>
+            </div>
+            <div class="submit-wrap">
+              <button class="btn btn-gold btn-full" id="submit-btn">Proceed to Payment →</button>
+              <p class="submit-note">Nomination deadline: 2nd May 2026 · Award Ceremony: 23rd May 2026 · NSE Mumbai</p>
+            </div>
+          </div>
+
+        </div><!-- /reg-main -->
+
+        <!-- ── RIGHT: SUMMARY SIDEBAR ── -->
+        <div class="reg-sidebar">
+          <div class="summary-card">
+            <h3>Your Registration</h3>
+            <div class="summary-row"><span class="lbl">Pass</span><span class="val" id="sum-pass">Not selected</span></div>
+            <div class="summary-row"><span class="lbl">Quantity</span><span class="val" id="sum-qty">—</span></div>
+            <div class="summary-row"><span class="lbl">Unit Price</span><span class="val" id="sum-unit">—</span></div>
+            <div class="summary-row total"><span class="lbl">Total</span><span class="val" id="sum-total">—</span></div>
+            <!-- Award list (shown when award categories selected) -->
+            <div id="sum-awards-wrap" style="display:none;margin-top:12px;padding-top:12px;border-top:1px solid var(--gold-lt);">
+              <p style="font-size:.6875rem;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;">Selected Categories</p>
+              <ul id="sum-award-list" style="list-style:none;padding:0;"></ul>
+            </div>
+          </div>
+          <div style="margin-top:14px;padding:16px;background:var(--plum-800);border:1px solid var(--gold-lt);border-radius:var(--r-lg);">
+            <p style="font-size:.8125rem;color:var(--txt3);line-height:1.75;">
+              <strong style="color:var(--gold);">📅 Key Dates</strong><br/>
+              Nomination Deadline: 2 May<br/>
+              Top 3 Announced: 11 May<br/>
+              Pitch Upload Deadline: 15 May<br/>
+              Ceremony: 23 May 2026
+            </p>
+          </div>
+          <div style="margin-top:14px;padding:16px;background:var(--plum-800);border:1px solid var(--gold-lt);border-radius:var(--r-lg);">
+            <p style="font-size:.8125rem;color:var(--txt3);line-height:1.75;">
+              <strong style="color:var(--gold);">📧 Need help?</strong><br/>
+              <a href="mailto:connect@billenniumdivas.fund">connect@billenniumdivas.fund</a>
+            </p>
+          </div>
+        </div><!-- /reg-sidebar -->
+
+      </div><!-- /reg-layout -->
+    </div><!-- /reg-form-wrap -->
+
+    <!-- SUCCESS STATE -->
+    <div class="success-state" id="reg-success">
+      <div class="success-icon-wrap">✦</div>
+      <span class="eyebrow" style="margin-bottom:10px;">Registration Confirmed</span>
+      <h2 class="success-title">Welcome to the Summit</h2>
+      <p class="success-msg">Your payment has been processed. Your entry receipt with QR code is below — present it at NSE Mumbai on 23rd May 2026 for check-in.</p>
+    </div>
+
+    <!-- RECEIPT -->
+    <div class="receipt-wrap" id="receipt-wrap">
+      <div class="receipt-box">
+        <div class="receipt-head">
+          <img src="assets/img/logo.png" alt="Billennium Divas"
+            onerror="this.src='https://www.womenpowersummit.in/assets/img/logo/Logo%20Full%20Color.png';this.onerror=null;"/>
+          <h3>WPSA 2026 — Entry Receipt</h3>
+          <p>11th Annual Women Power Summit &amp; Awards</p>
+        </div>
+        <div class="receipt-body">
+          <div class="receipt-qr-wrap">
+            <div id="rcpt-qr"></div>
+            <p>Scan at entry for check-in · ID: <strong style="color:var(--gold);" id="rcpt-id">—</strong></p>
+          </div>
+          <div class="receipt-row"><span class="rl">Name</span><span class="rv" id="rcpt-name">—</span></div>
+          <div class="receipt-row"><span class="rl">Email</span><span class="rv" id="rcpt-email">—</span></div>
+          <div class="receipt-row"><span class="rl">Organisation</span><span class="rv" id="rcpt-org">—</span></div>
+          <div class="receipt-row"><span class="rl">Pass / Ticket</span><span class="rv" id="rcpt-pass">—</span></div>
+          <div class="receipt-row" id="rcpt-awards-row" style="display:none;"><span class="rl">Award Categories</span><span class="rv" id="rcpt-awards">—</span></div>
+          <div class="receipt-row"><span class="rl">Amount Paid</span><span class="rv" id="rcpt-amt">—</span></div>
+          <div class="receipt-row"><span class="rl">Payment Method</span><span class="rv" id="rcpt-pay">—</span></div>
+          <div class="receipt-row"><span class="rl">Date</span><span class="rv" id="rcpt-date">—</span></div>
+        </div>
+        <div class="receipt-foot">
+          <p>23rd May 2026 · 09:30 AM – 06:00 PM · NSE, BKC, Mumbai</p>
+          <p>Queries: <a href="mailto:connect@billenniumdivas.fund">connect@billenniumdivas.fund</a></p>
+        </div>
+      </div>
+      <div class="receipt-actions">
+        <button class="btn btn-gold btn-sm" id="rcpt-print">🖨 Print Receipt</button>
+        <button class="btn btn-outline btn-sm" id="rcpt-dl"><span>⬇ Download</span></button>
+      </div>
+    </div>
+
+    <!-- PITCH UPLOAD (PitchPower only) -->
+    <div class="pitch-panel" id="pitch-panel">
+      <div class="pitch-box">
+        <div class="ornament orn-sm" style="margin-bottom:18px;"><span class="orn-line"></span><span class="orn-dot"></span><span class="orn-line r"></span></div>
+        <span class="eyebrow" style="margin-bottom:8px;">PitchPower — Next Step</span>
+        <h3 style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:600;color:var(--white);margin-bottom:10px;">Upload Your Pitch Deck</h3>
+        <p style="font-size:.9375rem;color:var(--txt2);margin-bottom:20px;line-height:1.7;">Upload your startup pitch presentation so it is available for investor panel review ahead of 23rd May. Accepted formats: <strong style="color:var(--gold);">.pdf · .ppt · .pptx · .key · .odp · .pps</strong> · Max 50 MB per file.</p>
+        <div class="drop-zone" id="drop-zone">
+          <span class="drop-icon">📤</span>
+          <div class="drop-main">Drag &amp; drop your pitch deck here</div>
+          <div class="drop-sub">or click to browse files</div>
+        </div>
+        <input type="file" id="pitch-input" accept=".pdf,.ppt,.pptx,.key,.odp,.pps,.ppsx" multiple style="display:none;"/>
+        <div class="pitch-files" id="pitch-file-list"></div>
+        <p class="pitch-status" id="pitch-status"></p>
+        <p style="font-size:.8125rem;color:var(--txt4);margin-top:14px;">Upload deadline: 15th May 2026. You will receive a confirmation once your submission is reviewed by the team.</p>
+      </div>
+    </div>
+
+  </div><!-- /container -->
+</div><!-- /page-register -->
+
+
+<!-- FOOTER -->
+<footer id="footer">
+  <div class="footer-inner">
+    <img src="assets/img/logo.png" alt="Billennium Divas"
+      onerror="this.src='https://www.womenpowersummit.in/assets/img/logo/Logo%20Full%20Color.png';this.onerror=null;"/>
+    <p>Women Power Summit &amp; Awards 2026 — India's most prestigious platform for women entrepreneurship</p>
+    <p>Powered by <a href="https://www.billenniumdivas.fund" target="_blank" rel="noopener">Billennium Divas Private Limited</a> &nbsp;·&nbsp; <a href="mailto:connect@billenniumdivas.fund">connect@billenniumdivas.fund</a></p>
+    <p style="margin-top:8px;">#WPSA2026 &nbsp;·&nbsp; #BreakFree &nbsp;·&nbsp; #BeThePower</p>
+  </div>
+</footer>
+
+<script src="main.js"></script>
+</body>
+</html>

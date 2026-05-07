@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="robots" content="noindex, nofollow"/>
+  <title>Organiser Panel — WPSA 2026</title>
+  <link rel="icon" href="assets/img/favicon.png" type="image/png"/>
+  <link rel="stylesheet" href="admin.css"/>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════
+     LOGIN SCREEN
+     ══════════════════════════════════════ -->
+<div id="login-screen">
+  <div class="login-card">
+    <img class="login-logo" src="assets/img/logo.png" alt="Billennium Divas"
+      onerror="this.src='https://www.womenpowersummit.in/assets/img/logo/Logo%20Full%20Color.png';this.onerror=null;"/>
+    <h1 class="login-title">Organiser Panel</h1>
+    <p class="login-sub">WPSA 2026 · Women Power Summit &amp; Awards</p>
+    <div class="login-field">
+      <label for="login-pass">Admin Password</label>
+      <input type="password" id="login-pass" placeholder="Enter organiser password" autocomplete="current-password"/>
+    </div>
+    <p class="login-err" id="login-err">Incorrect password. Please try again.</p>
+    <button class="btn btn-gold btn-full" id="login-btn">Sign In →</button>
+    <p class="login-hint">Default: <strong>wpsa2026@admin</strong> — change in <code>js/admin.js</code></p>
+  </div>
+</div>
+
+
+<!-- ══════════════════════════════════════
+     ADMIN APP (hidden until login)
+     ══════════════════════════════════════ -->
+<div id="admin-app">
+
+  <!-- Top nav -->
+  <nav class="admin-nav">
+    <div class="admin-nav-brand">
+      <img src="assets/img/logo.png" alt="Billennium Divas"
+        onerror="this.src='https://www.womenpowersummit.in/assets/img/logo/Logo%20Full%20Color.png';this.onerror=null;"/>
+      <div class="admin-nav-brand-text">
+        Organiser Panel
+        <small>WPSA 2026 · Billennium Divas</small>
+      </div>
+    </div>
+    <div class="admin-nav-right">
+      <button class="btn btn-ghost btn-sm" id="export-btn">⬇ Export CSV</button>
+      <button class="btn btn-gold btn-sm" onclick="window.location.href='index.html'">← Live Site</button>
+    </div>
+  </nav>
+
+  <!-- Body -->
+  <div class="admin-body">
+
+    <!-- ── STAT STRIP ── -->
+    <div class="stat-strip">
+      <div class="stat-card highlight">
+        <div class="stat-card-num" id="st-total">0</div>
+        <div class="stat-card-label">Total Registrations</div>
+      </div>
+      <div class="stat-card highlight">
+        <div class="stat-card-num" id="st-revenue">₹0</div>
+        <div class="stat-card-label">Total Revenue</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-num" id="st-checkin">0</div>
+        <div class="stat-card-label">Checked In</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-num" id="st-pct">0%</div>
+        <div class="stat-card-label">Check-In Rate</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-num" id="st-award">0</div>
+        <div class="stat-card-label">Award Nominees</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-num" id="st-delegate">0</div>
+        <div class="stat-card-label">Delegates</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-card-num" id="st-startup">0</div>
+        <div class="stat-card-label">PitchPower</div>
+      </div>
+    </div>
+
+    <!-- ── TABS ── -->
+    <div class="admin-tabs">
+      <button class="atab active" data-tab="registrations">📋 Registrations</button>
+      <button class="atab" data-tab="checkin">✓ Check-In</button>
+      <button class="atab" data-tab="pitches">🚀 Pitch Submissions</button>
+      <button class="atab" data-tab="loginlogs">🔐 Login Logs</button>
+      <button class="atab" data-tab="settings">⚙ Settings &amp; Customise</button>
+    </div>
+
+    <!-- ══ PANE: REGISTRATIONS ══ -->
+    <div class="apane active" id="pane-registrations">
+      <div class="controls-bar">
+        <input class="admin-search" id="reg-search" type="search" placeholder="Search name, email, org, ID…"/>
+        <select class="admin-select" id="reg-filter">
+          <option value="all">All Pass Types</option>
+          <option value="award">Award Nomination</option>
+          <option value="delegate">Delegate Pass</option>
+          <option value="startup">PitchPower</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" id="export-btn-inline">⬇ Export CSV</button>
+      </div>
+      <div class="table-shell">
+        <table class="atable">
+          <thead>
+            <tr>
+              <th>Name / Email</th>
+              <th>Organisation</th>
+              <th>Pass</th>
+              <th>Amount</th>
+              <th>Payment</th>
+              <th>Check-In</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="reg-tbody">
+            <tr><td colspan="7" style="text-align:center;padding:32px;color:var(--txt4);">Loading registrations…</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ PANE: CHECK-IN ══ -->
+    <div class="apane" id="pane-checkin">
+      <div class="ci-search-wrap">
+        <div style="margin-bottom:6px;">
+          <span style="font-size:.6875rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);">On-Site Check-In</span>
+        </div>
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:600;color:var(--white);margin-bottom:8px;">Scan or Search to Check In</h2>
+        <p style="font-size:.9375rem;color:var(--txt3);line-height:1.7;margin-bottom:0;">Enter the registration ID (from QR code) or the attendee's email address to look up and confirm entry.</p>
+        <div class="ci-search-row">
+          <input class="ci-input" id="ci-input" type="text" placeholder="e.g. WPSA26-ABC123 or email@example.com"/>
+          <button class="btn btn-gold" id="ci-search-btn">Look Up</button>
+        </div>
+      </div>
+      <div id="ci-result"></div>
+    </div>
+
+    <!-- ══ PANE: PITCH SUBMISSIONS ══ -->
+    <div class="apane" id="pane-pitches">
+      <div style="margin-bottom:22px;">
+        <span style="font-size:.6875rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);">PitchPower</span>
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:600;color:var(--white);margin-top:6px;">Uploaded Pitch Decks</h2>
+      </div>
+      <div class="table-shell">
+        <table class="atable">
+          <thead>
+            <tr>
+              <th>Startup / Founder</th>
+              <th>Email</th>
+              <th>Pitch Files Uploaded</th>
+              <th>Reg ID</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="pitch-tbody">
+            <tr><td colspan="5" style="text-align:center;padding:28px;color:var(--txt4);">No PitchPower registrations yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ PANE: LOGIN LOGS ══ -->
+    <div class="apane" id="pane-loginlogs">
+      <div style="margin-bottom:22px;">
+        <span style="font-size:.6875rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);">Security</span>
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:600;color:var(--white);margin-top:6px;">Login Logs</h2>
+        <p style="font-size:.9375rem;color:var(--txt3);margin-top:4px;line-height:1.7;">Records of all sign-in attempts for public users and the organiser panel.</p>
+      </div>
+      <div class="controls-bar">
+        <input class="admin-search" id="log-search" type="search" placeholder="Search by email…"/>
+        <select class="admin-select" id="log-filter">
+          <option value="all">All Events</option>
+          <option value="user">User Logins</option>
+          <option value="admin">Admin Logins</option>
+          <option value="failed">Failed Attempts</option>
+        </select>
+        <button class="btn btn-ghost btn-sm" id="clear-logs-btn">🗑 Clear Logs</button>
+      </div>
+      <div class="table-shell">
+        <table class="atable">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Email / Account</th>
+              <th>Type</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody id="log-tbody">
+            <tr><td colspan="4" style="text-align:center;padding:28px;color:var(--txt4);">No login events recorded yet.</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ══ PANE: SETTINGS ══ -->
+    <div class="apane" id="pane-settings">
+      <div style="margin-bottom:24px;">
+        <span style="font-size:.6875rem;font-weight:700;letter-spacing:.22em;text-transform:uppercase;color:var(--gold);">Settings &amp; Customise</span>
+        <h2 style="font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:600;color:var(--white);margin-top:6px;">Email &amp; Event Configuration</h2>
+      </div>
+      <div class="settings-layout">
+
+        <!-- Email toggles -->
+        <div class="settings-card">
+          <h3>Confirmation Emails</h3>
+          <div class="settings-row">
+            <div class="settings-label">
+              Send receipt with QR code
+              <small>Email entry receipt to attendee on successful registration</small>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="set-receipt"/>
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="settings-row">
+            <div class="settings-label">
+              Attach event agenda
+              <small>Include the full event schedule in the confirmation email</small>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="set-agenda"/>
+              <span class="toggle-track"></span>
+            </label>
+          </div>
+          <div class="settings-field" style="margin-top:18px;">
+            <label for="set-subject">Email Subject Line</label>
+            <input type="text" id="set-subject" placeholder="Your WPSA 2026 Registration is Confirmed! 🎉"/>
+          </div>
+        </div>
+
+        <!-- Deadlines -->
+        <div class="settings-card">
+          <h3>Key Deadlines</h3>
+          <div class="settings-field">
+            <label for="set-deadline">PitchPower Upload Deadline</label>
+            <input type="date" id="set-deadline"/>
+            <p style="font-size:.8125rem;color:var(--txt4);margin-top:8px;line-height:1.65;">After this date the pitch upload portal will close for PitchPower registrants. They will be notified via email.</p>
+          </div>
+          <div style="margin-top:20px;padding:14px;background:rgba(201,149,42,.06);border:1px solid var(--gold-lt);border-radius:var(--r);">
+            <p style="font-size:.875rem;color:var(--txt2);line-height:1.75;font-weight:500;">📅 Fixed Dates</p>
+            <p style="font-size:.8125rem;color:var(--txt3);line-height:1.8;margin-top:6px;">
+              Nomination Deadline: <strong style="color:var(--gold);">2nd May 2026</strong><br/>
+              Top 3 Shortlist: <strong style="color:var(--gold);">11th May 2026</strong><br/>
+              Award Ceremony: <strong style="color:var(--gold);">23rd May 2026</strong>
+            </p>
+          </div>
+        </div>
+
+        <!-- Agenda editor -->
+        <div class="settings-card span-full">
+          <h3>Event Agenda Text <span style="font-size:.75rem;font-weight:400;color:var(--txt4);font-family:'Inter',sans-serif;"> — sent to attendees in their confirmation email</span></h3>
+          <p style="font-size:.875rem;color:var(--txt3);margin-bottom:14px;line-height:1.7;">Edit the agenda below to reflect any schedule changes. Plain text, one item per line.</p>
+          <div class="settings-field">
+            <textarea id="set-agenda-text" rows="18"></textarea>
+          </div>
+        </div>
+
+      </div>
+      <div style="margin-top:24px;display:flex;gap:12px;align-items:center;">
+        <button class="btn btn-gold" id="save-settings">Save Settings</button>
+        <p style="font-size:.8125rem;color:var(--txt4);">Changes are saved locally and applied to all future confirmation emails.</p>
+      </div>
+    </div>
+
+  </div><!-- /admin-body -->
+</div><!-- /admin-app -->
+
+<script src="admin.js"></script>
+<script>
+/* ── export-btn-inline wires to same function ── */
+document.getElementById('export-btn-inline')?.addEventListener('click', exportCSV);
+document.getElementById('export-btn')?.addEventListener('click', exportCSV);
+</script>
+</body>
+</html>

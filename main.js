@@ -1,0 +1,985 @@
+/* ═══════════════════════════════════════════════
+   WPSA 2026 · main.js
+   Registration · Payment · Receipt · Pitch Upload
+   ═══════════════════════════════════════════════ */
+'use strict';
+
+/* ═════════════════════════════════
+   DATA
+   ═════════════════════════════════ */
+
+const TICKET_TYPES = {
+  award:    { label: 'Award Nomination', price: 4499, priceNote: 'per category · up to 5 categories' },
+  delegate: { label: 'Delegate Pass',    price: 4999, priceNote: 'per person · full-day access'       },
+  startup:  { label: 'PitchPower',       price: 5000, priceNote: 'per startup · includes delegate access' },
+};
+
+/* Award categories — 30 women + 10 ecosystem = 40 total
+   Organised into readable sector groups */
+const AWARD_SECTORS = [
+  {
+    id: 'excellence',
+    label: 'Excellence in Entrepreneurship',
+    type: 'women',
+    icon: '🏆',
+    cats: [
+      'Entrepreneur of the Year',
+      'Young Entrepreneur of the Year (Under 35)',
+      'Senior Entrepreneur – Beyond 60+',
+    ],
+  },
+  {
+    id: 'sector-tech',
+    label: 'Technology & Digital',
+    type: 'women',
+    icon: '💻',
+    cats: [
+      'Technology (AI / ML / SaaS)',
+      'HealthTech & Wellness',
+      'FinTech',
+      'EduTech',
+      'AgriTech',
+      'Digital Media & Content',
+    ],
+  },
+  {
+    id: 'sector-biz',
+    label: 'Business & Industry',
+    type: 'women',
+    icon: '🏭',
+    cats: [
+      'D2C / Retail',
+      'Manufacturing',
+      'Food & Beverage',
+      'Fashion & Lifestyle',
+      'Transportation & Logistics',
+      'MICE (Events & Hospitality)',
+      'Recruitment & HR',
+    ],
+  },
+  {
+    id: 'sector-creative',
+    label: 'Creative & Lifestyle',
+    type: 'women',
+    icon: '🎨',
+    cats: [
+      'Media & Entertainment',
+      'Arts & Craft',
+      'Fitness & Holistic Healing',
+      'Public Relations',
+    ],
+  },
+  {
+    id: 'sector-impact',
+    label: 'Impact & Leadership',
+    type: 'women',
+    icon: '🌟',
+    cats: [
+      'Social Entrepreneurship',
+      'Community Builder',
+      'Sustainability Champion',
+      'DE&I Champion',
+      'Homepreneur of the Year',
+      'Legal & Compliance Excellence',
+      'Education Leadership',
+    ],
+  },
+  {
+    id: 'recognition',
+    label: 'Special Recognition',
+    type: 'women',
+    icon: '🎖️',
+    cats: [
+      'Women Investor Award',
+      'Women Mentor Award',
+      'Women Influencer Award',
+    ],
+  },
+  {
+    id: 'ecosystem',
+    label: 'Startup Ecosystem Enablers',
+    type: 'eco',
+    icon: '🚀',
+    cats: [
+      'Incubator of the Year',
+      'Accelerator of the Year',
+      'Angel Investor / VC of the Year',
+      'E-Cell of the Year',
+      'Co-Working Space of the Year',
+      'Startup Tech Enabler of the Year',
+      'CSR Organization of the Year',
+      'Government Initiative of the Year',
+      'Startup Story Platform of the Year',
+      "Jury's Special Choice Award",
+    ],
+  },
+];
+
+/* Flat list for home page tags */
+const ALL_CATS_FLAT = AWARD_SECTORS.flatMap(s => s.cats.map(c => ({ name: c, type: s.type })));
+
+const JURY = [
+  { i:'SS', name:'Ms. Shweta Shalini',      role:'Chief Evangelist, Billennium Divas · TEDx Speaker', chair:true,  img:'https://www.womenpowersummit.in/assets/img/new_images/SS.jpg' },
+  { i:'AT', name:'Mr. Ajay Thakur',          role:'CEO & Managing Partner, TGI SME Capital Advisors LLP',           img:'https://www.womenpowersummit.in/assets/img/new_images/AT.jpeg' },
+  { i:'MS', name:'Mr. Mahavir Pratap Sharma',role:'General Partner, Swishin Ventures',                             img:'https://www.womenpowersummit.in/assets/img/new_images/MS.jpg' },
+  { i:'RR', name:'Mr. Ramanan Ramanathan',   role:'Mission Director, Atal Innovation Mission',                     img:'https://www.womenpowersummit.in/assets/img/new_images/RR.png' },
+  { i:'TC', name:'Ms. Tanya Chaitanya',      role:'CEO, Her Circle · President Digital & Diversity, Reliance',     img:'https://www.womenpowersummit.in/assets/img/new_images/TC.jpg' },
+  { i:'AS', name:'Mr. Amit Singal',          role:'Founding Partner, Fluid Ventures',                              img:'https://www.womenpowersummit.in/assets/img/new_images/AS.jpg' },
+  { i:'SG', name:'Ms. Sonia Sharma Gupta',   role:'Co-Founder & Head IR, IvyCap Ventures',                        img:'https://www.womenpowersummit.in/assets/img/new_images/SSG.jpeg' },
+  { i:'CO', name:'Mr. Chintan Oza',          role:'Founder, Anantam Ecosystems',                                   img:'https://www.womenpowersummit.in/assets/img/new_images/CO.png' },
+  { i:'RB', name:'Ms. Rachana Bhusari',      role:'CCO & Head Legal, ICICIDirect',                                 img:'https://www.womenpowersummit.in/assets/img/new_images/RB.jpg' },
+  { i:'AB', name:'Mr. Adhiraj Banerjee',     role:'Founder, OpenDelta',                                            img:'https://www.womenpowersummit.in/assets/img/new_images/AB.jpg' },
+  { i:'JT', name:'Ms. Jyoti M Tiwari',       role:'Founder & CEO, Ingenious Works',                               img:'https://www.womenpowersummit.in/assets/img/new_images/JT.jpeg' },
+  { i:'DM', name:'Ms. Divya Momaya',         role:'Founder, MentorMyBoard',                                        img:'https://www.womenpowersummit.in/assets/img/new_images/DM.jpg' },
+];
+
+const GALLERY_SRCS = [
+  'https://www.womenpowersummit.in/assets/img/new_images/2.png',
+  'https://www.womenpowersummit.in/assets/img/extras/NewGallery_1.webp',
+  'https://www.womenpowersummit.in/assets/img/extras/NewGallery_2.webp',
+  'https://www.womenpowersummit.in/assets/img/extras/20250530_111055_0000.webp',
+  'https://www.womenpowersummit.in/assets/img/extras/20250530_111055_0002.webp',
+  'https://www.womenpowersummit.in/assets/img/extras/20250530_111903_0000.webp',
+  'https://www.womenpowersummit.in/assets/img/new_images/3.png',
+  'https://www.womenpowersummit.in/assets/img/new_images/4.png',
+  'https://www.womenpowersummit.in/assets/img/new_images/5.png',
+];
+
+const SCHEDULE = [
+  { time:'09:30 – 10:30 AM', title:'Registrations & Welcome Tea',         desc:'Check-in, tea & coffee, welcome networking for all delegates' },
+  { time:'10:30 – 10:35 AM', title:'Opening Ceremony & Lamp Lighting',    desc:'Chief Guest, Guest of Honour & Dignitaries. Welcome address by organisers.' },
+  { time:'10:35 – 10:50 AM', title:'Keynote Address',                     desc:'By the Chief Guest' },
+  { time:'10:50 – 11:00 AM', title:'Address by Guest of Honour',          desc:'' },
+  { time:'11:00 – 11:30 AM', title:'Fireside Chat',                       desc:'"How can we Unleash the Power of Women Entrepreneurs?"' },
+  { time:'11:30 AM – 12:00', title:'Awards Ceremony — Set 1',             desc:'Felicitation of the first batch of Women Power Award Winners 2026' },
+  { time:'12:00 – 12:15 PM', title:'Empower Track 1',                     desc:'Bridging the Digital Divide & Increasing Access for Women Entrepreneurs' },
+  { time:'12:15 – 01:00 PM', title:'Panel Discussion 1',                  desc:'"Future Forward: Women Leading Innovation and Technology in Business"' },
+  { time:'01:00 – 02:00 PM', title:'Power Lunch & Networking',            desc:'Exclusive networking with 250+ women entrepreneurs, investors & thought-leaders' },
+  { time:'02:00 – 02:30 PM', title:'Awards Ceremony — Set 2',             desc:'Felicitation of the second batch of Women Power Award Winners 2026' },
+  { time:'02:30 – 02:45 PM', title:'Empower Track 2',                     desc:'Leveraging Technology for Business Growth & Scale' },
+  { time:'02:45 – 03:30 PM', title:'Panel Discussion 2',                  desc:'"Beyond the Numbers: Unpacking Gender Bias in Funding Decisions"' },
+  { time:'03:30 – 05:00 PM', title:'PitchPower — Startup Pitches',        desc:'Top 10 curated startups pitch to the Investor Panel · 10-min elevator pitches' },
+  { time:'05:00 – 05:30 PM', title:'Awards Ceremony — Set 3',             desc:'Felicitation of the final batch of Women Power Award Winners 2026' },
+  { time:'05:30 – 06:00 PM', title:'Vote of Thanks & Power Networking',   desc:'Celebrate, connect and forge partnerships that last beyond the summit' },
+];
+
+const PARTNERS = [
+  { tier:'Organised By', items:[
+    { i:'BD', name:'Billennium Divas Private Limited', type:'Event Organiser · Founded 2017' },
+  ]},
+  { tier:'Supported By', items:[
+    { i:'EC', name:"Eves Entrepreneurship Excellence Academy (E³)", type:'Supporting Partner' },
+    { i:'CW', name:'Consortium of Empowered Women Entrepreneurs (CEWE)', type:'Supporting Partner' },
+    { i:'GI', name:'The Great India Unicorn Hunt', type:'Supporting Partner' },
+  ]},
+  { tier:'Knowledge Partners', items:[
+    { i:'CI', name:"Chetana's Institute of Management & Research", type:'Knowledge Partner' },
+    { i:'AI', name:'Atal Innovation Mission', type:'Knowledge Partner' },
+  ]},
+  { tier:'Investor & Venture Partners', items:[
+    { i:'VW', name:'Venture Wolf', type:'Investment Partner' },
+    { i:'FV', name:'Fluid Ventures', type:'Venture Partner' },
+    { i:'IC', name:'IvyCap Ventures', type:'Investor Partner' },
+    { i:'SW', name:'Swishin Ventures', type:'Investment Partner' },
+    { i:'TG', name:'TGI SME Capital Advisors LLP', type:'Capital Partner' },
+  ]},
+  { tier:'Community & Ecosystem Partners', items:[
+    { i:'HC', name:'Her Circle', type:'Community Partner' },
+    { i:'AE', name:'Anantam Ecosystems', type:'Ecosystem Partner' },
+    { i:'OD', name:'OpenDelta', type:'Technology Partner' },
+    { i:'IW', name:'Ingenious Works', type:'Ecosystem Partner' },
+    { i:'MB', name:'MentorMyBoard', type:'Mentorship Partner' },
+  ]},
+  { tier:'Media Partners', items:[
+    { i:'SM', name:'SME World', type:'Media Partner' },
+  ]},
+];
+
+const SOCIALS = [
+  { label:'Instagram',       url:'https://bit.ly/3xc65gO' },
+  { label:'LinkedIn',        url:'https://www.linkedin.com/company/billenniumdivas' },
+  { label:'Facebook',        url:'https://www.facebook.com/billenniumdivas' },
+  { label:'YouTube',         url:'https://bit.ly/3l2FE6B' },
+  { label:'Telegram',        url:'https://t.me/billenniumdivas' },
+  { label:'WhatsApp',        url:'https://whatsapp.com/channel/0029VaB3C2s6LwHftjmbqu2d' },
+  { label:'LinkedIn Group',  url:'https://www.linkedin.com/groups/3724850' },
+  { label:'Facebook Group',  url:'https://www.facebook.com/groups/billenniumdivas' },
+];
+
+/* ═════════════════════════════════
+   STORAGE HELPERS
+   ═════════════════════════════════ */
+
+function getRegs()      { return JSON.parse(localStorage.getItem('wpsa_regs')     || '[]'); }
+function saveRegs(r)    { localStorage.setItem('wpsa_regs', JSON.stringify(r)); }
+function getSettings()  { return JSON.parse(localStorage.getItem('wpsa_settings') || 'null') || defaultSettings(); }
+function saveSettings(s){ localStorage.setItem('wpsa_settings', JSON.stringify(s)); }
+
+/* ═════════════════════════════════
+   AUTH SYSTEM
+   ═════════════════════════════════ */
+
+function getUsers()     { return JSON.parse(localStorage.getItem('wpsa_users') || '[]'); }
+function saveUsers(u)   { localStorage.setItem('wpsa_users', JSON.stringify(u)); }
+function getSession()   { return JSON.parse(sessionStorage.getItem('wpsa_session') || 'null'); }
+function setSession(u)  { sessionStorage.setItem('wpsa_session', JSON.stringify(u)); }
+function clearSession() { sessionStorage.removeItem('wpsa_session'); }
+
+function addLoginLog(email, type, status) {
+  const logs = JSON.parse(localStorage.getItem('wpsa_login_logs') || '[]');
+  logs.unshift({ email, type, status, timestamp: new Date().toISOString() });
+  if (logs.length > 500) logs.splice(500);
+  localStorage.setItem('wpsa_login_logs', JSON.stringify(logs));
+}
+
+let authCallback = null;
+
+function requireAuth(cb) {
+  const session = getSession();
+  if (session) { cb(session); return; }
+  authCallback = cb;
+  openAuthModal('login');
+}
+
+function openAuthModal(mode) {
+  setAuthMode(mode || 'login');
+  document.getElementById('auth-modal').classList.add('open');
+}
+
+function closeAuthModal() {
+  document.getElementById('auth-modal').classList.remove('open');
+  authCallback = null;
+}
+
+function setAuthMode(mode) {
+  const isLogin = mode === 'login';
+  document.getElementById('auth-modal').dataset.mode = mode;
+  document.getElementById('auth-modal-title').textContent = isLogin ? 'Sign In to Continue' : 'Create Account';
+  document.getElementById('auth-modal-sub').textContent   = isLogin
+    ? 'Log in to access your registration or apply for WPSA 2026.'
+    : 'Create a free account to register for WPSA 2026.';
+  document.getElementById('auth-name-row').style.display  = isLogin ? 'none' : 'grid';
+  document.getElementById('auth-submit-btn').textContent  = isLogin ? 'Sign In →' : 'Create Account →';
+  document.getElementById('auth-toggle-text').innerHTML   = isLogin
+    ? 'New here? <button class="auth-toggle-link" id="auth-switch-reg">Create a free account</button>'
+    : 'Already have an account? <button class="auth-toggle-link" id="auth-switch-reg">Sign in</button>';
+  document.getElementById('auth-err').style.display = 'none';
+  document.getElementById('auth-switch-reg')?.addEventListener('click', () => setAuthMode(isLogin ? 'register' : 'login'));
+}
+
+function handleAuthSubmit() {
+  const mode  = document.getElementById('auth-modal').dataset.mode;
+  const email = document.getElementById('auth-email').value.trim().toLowerCase();
+  const pass  = document.getElementById('auth-pass').value;
+  const err   = document.getElementById('auth-err');
+
+  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    err.textContent = 'Please enter a valid email address.';
+    err.style.display = 'block'; return;
+  }
+  if (!pass || pass.length < 6) {
+    err.textContent = 'Password must be at least 6 characters.';
+    err.style.display = 'block'; return;
+  }
+
+  const users = getUsers();
+
+  if (mode === 'register') {
+    const fname = document.getElementById('auth-fname').value.trim();
+    const lname = document.getElementById('auth-lname').value.trim();
+    if (!fname || !lname) {
+      err.textContent = 'Please enter your first and last name.';
+      err.style.display = 'block'; return;
+    }
+    if (users.find(u => u.email === email)) {
+      err.textContent = 'An account with this email already exists. Please sign in.';
+      err.style.display = 'block'; return;
+    }
+    users.push({ email, pass, firstname: fname, lastname: lname, createdAt: new Date().toISOString() });
+    saveUsers(users);
+    addLoginLog(email, 'user', 'success');
+    const session = { email, firstname: fname, lastname: lname };
+    setSession(session);
+    updateNavAuth(session);
+    closeAuthModal();
+    if (authCallback) { const cb = authCallback; authCallback = null; cb(session); }
+
+  } else {
+    const user = users.find(u => u.email === email && u.pass === pass);
+    if (!user) {
+      addLoginLog(email, 'user', 'failed');
+      err.textContent = 'Incorrect email or password. Please try again.';
+      err.style.display = 'block'; return;
+    }
+    addLoginLog(email, 'user', 'success');
+    const session = { email: user.email, firstname: user.firstname, lastname: user.lastname };
+    setSession(session);
+    updateNavAuth(session);
+    closeAuthModal();
+    if (authCallback) { const cb = authCallback; authCallback = null; cb(session); }
+  }
+}
+
+function updateNavAuth(session) {
+  const btn = document.getElementById('nav-auth-btn');
+  if (!btn) return;
+  if (session) {
+    btn.textContent = session.firstname + ' ▾';
+    btn.classList.add('nav-auth-logged');
+  } else {
+    btn.textContent = 'Sign In';
+    btn.classList.remove('nav-auth-logged');
+  }
+}
+
+function handleNavAuth() {
+  const session = getSession();
+  if (session) {
+    if (confirm(`Signed in as ${session.email}\n\nSign out?`)) {
+      clearSession();
+      updateNavAuth(null);
+    }
+  } else {
+    openAuthModal('login');
+  }
+}
+
+/* Restore previous registration state for a returning authenticated user */
+function restoreRegSession(session) {
+  const regs = getRegs();
+  const existing = regs.find(r => r.email === session.email && r.status === 'confirmed');
+  if (!existing) {
+    /* Pre-fill form fields from session */
+    const fn = document.getElementById('f-fn');
+    const ln = document.getElementById('f-ln');
+    const em = document.getElementById('f-em');
+    if (fn && !fn.value) fn.value = session.firstname || '';
+    if (ln && !ln.value) ln.value = session.lastname  || '';
+    if (em && !em.value) em.value = session.email      || '';
+    return;
+  }
+  /* Show receipt + pitch panel for the existing registration */
+  currentReg = existing;
+  pitchFiles = (existing.pitchFiles || []).map(name => ({ name, size: 0, restored: true }));
+  document.getElementById('reg-form-wrap').style.display = 'none';
+  document.getElementById('reg-success').style.display   = 'block';
+  renderReceipt(existing);
+  document.getElementById('receipt-wrap').classList.add('show');
+  if (existing.ticket === 'startup') {
+    document.getElementById('pitch-panel').classList.add('show');
+    renderPitchFiles();
+  }
+}
+
+function defaultSettings() {
+  return {
+    sendAgenda:   true,
+    sendReceipt:  true,
+    pitchDeadline:'2026-05-15',
+    confirmSubject:'Your WPSA 2026 Registration is Confirmed! 🎉',
+    agendaText: `WPSA 2026 — Event Agenda\n${'─'.repeat(44)}\nDate   : Saturday, 23rd May 2026\nTime   : 09:30 AM – 06:00 PM IST\nVenue  : NSE, Bandra Kurla Complex, Mumbai\n${'─'.repeat(44)}\n\n09:30 AM  Registrations & Welcome Tea\n10:30 AM  Opening Ceremony & Lamp Lighting\n10:35 AM  Keynote Address\n11:00 AM  Fireside Chat\n11:30 AM  Awards Ceremony — Set 1\n12:15 PM  Empower Track 1\n12:15 PM  Panel Discussion 1\n01:00 PM  Power Lunch & Networking\n02:00 PM  Awards Ceremony — Set 2\n02:30 PM  Empower Track 2\n02:45 PM  Panel Discussion 2\n03:30 PM  PitchPower Startup Pitches\n05:00 PM  Awards Ceremony — Set 3\n05:30 PM  Vote of Thanks & Power Networking\n\n${'─'.repeat(44)}\nFor queries: connect@billenniumdivas.fund\n#WPSA2026 · #BreakFree · #BeThePower`,
+  };
+}
+
+/* ═════════════════════════════════
+   TAB NAVIGATION
+   ═════════════════════════════════ */
+
+function showPage(id) {
+  if (id === 'register') {
+    requireAuth(session => {
+      _showPage('register');
+      restoreRegSession(session);
+    });
+    return;
+  }
+  _showPage(id);
+}
+
+function _showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  document.getElementById('page-' + id)?.classList.add('active');
+  document.querySelector(`.nav-link[data-page="${id}"]`)?.classList.add('active');
+  document.getElementById('nav-mobile-menu')?.classList.remove('open');
+  document.getElementById('nav-hamburger')?.classList.remove('open');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ═════════════════════════════════
+   COUNTDOWN
+   ═════════════════════════════════ */
+
+function startCountdown() {
+  const target = new Date('2026-05-23T09:30:00+05:30').getTime();
+  const pad = n => String(n).padStart(2, '0');
+  function tick() {
+    let diff = Math.max(0, target - Date.now());
+    const d = Math.floor(diff / 86400000); diff -= d * 86400000;
+    const h = Math.floor(diff / 3600000);  diff -= h * 3600000;
+    const m = Math.floor(diff / 60000);    diff -= m * 60000;
+    const s = Math.floor(diff / 1000);
+    const el = id => document.getElementById(id);
+    if (el('cd-d')) el('cd-d').textContent = pad(d);
+    if (el('cd-h')) el('cd-h').textContent = pad(h);
+    if (el('cd-m')) el('cd-m').textContent = pad(m);
+    if (el('cd-s')) el('cd-s').textContent = pad(s);
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+
+/* ═════════════════════════════════
+   HOME PAGE RENDERS
+   ═════════════════════════════════ */
+
+function renderHomeAwards(filter = 'all') {
+  const c = document.getElementById('award-cloud');
+  if (!c) return;
+  c.innerHTML = '';
+  ALL_CATS_FLAT
+    .filter(x => filter === 'all' || x.type === filter)
+    .forEach(x => {
+      const span = document.createElement('span');
+      span.className = 'award-cloud-tag' + (x.type === 'eco' ? ' eco' : '');
+      span.textContent = x.name;
+      c.appendChild(span);
+    });
+}
+
+function renderSchedule() {
+  const el = document.getElementById('schedule-list');
+  if (!el) return;
+  SCHEDULE.forEach(row => {
+    const div = document.createElement('div');
+    div.className = 'sch-row';
+    div.innerHTML = `<div class="sch-time">${row.time}</div><div><div class="sch-title">${row.title}</div>${row.desc ? `<div class="sch-desc">${row.desc}</div>` : ''}</div>`;
+    el.appendChild(div);
+  });
+}
+
+function renderJury() {
+  const g = document.getElementById('jury-grid');
+  if (!g) return;
+  JURY.forEach(j => {
+    const fb = `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 76 76'%3E%3Crect fill='%232a0940' width='76' height='76' rx='38'/%3E%3Ctext y='50' x='50%25' text-anchor='middle' fill='%23c9952a' font-size='22' font-family='Georgia,serif'%3E${j.i}%3C/text%3E%3C/svg%3E`;
+    const card = document.createElement('div');
+    card.className = 'jury-card';
+    card.innerHTML = `<img class="jury-avatar" src="${j.img}" alt="${j.name}" loading="lazy" onerror="this.src='${fb}'">
+      <div class="jury-name">${j.name}</div>
+      <div class="jury-role">${j.role}</div>
+      ${j.chair ? `<div class="badge badge-gold" style="margin-top:8px;">Jury Chair</div>` : ''}`;
+    g.appendChild(card);
+  });
+}
+
+function renderGallery() {
+  const g = document.getElementById('gallery-grid');
+  if (!g) return;
+  GALLERY_SRCS.forEach((src, i) => {
+    const img = document.createElement('img');
+    img.className = 'gallery-img'; img.src = src; img.alt = `WPSA Gallery ${i+1}`; img.loading = 'lazy';
+    img.onerror = function() { this.parentElement?.removeChild(this); };
+    g.appendChild(img);
+  });
+}
+
+function renderPartners() {
+  const w = document.getElementById('partner-tiers');
+  if (!w) return;
+  PARTNERS.forEach(group => {
+    const div = document.createElement('div');
+    div.className = 'partner-tier';
+    div.innerHTML = `<div class="partner-tier-label">${group.tier}</div>
+      <div class="partner-chips">${group.items.map(p =>
+        `<div class="partner-chip">
+          <div class="partner-initials">${p.i}</div>
+          <div><div class="partner-name">${p.name}</div><div class="partner-type">${p.type}</div></div>
+        </div>`).join('')}</div>`;
+    w.appendChild(div);
+  });
+}
+
+function renderSocials() {
+  const g = document.getElementById('social-links-wrap');
+  if (!g) return;
+  SOCIALS.forEach(s => {
+    const a = document.createElement('a');
+    a.className = 'social-link'; a.href = s.url; a.target = '_blank'; a.rel = 'noopener'; a.textContent = s.label;
+    g.appendChild(a);
+  });
+}
+
+/* ═════════════════════════════════
+   REGISTER PAGE
+   ═════════════════════════════════ */
+
+let selTicket   = null;
+let selAwards   = [];
+let pitchFiles  = [];
+let currentReg  = null;
+let selPayMethod = 'upi';
+
+/* Ticket selection */
+function initTicketCards() {
+  document.querySelectorAll('.ticket-card').forEach(card => {
+    card.addEventListener('click', () => {
+      document.querySelectorAll('.ticket-card').forEach(c => c.classList.remove('selected'));
+      card.classList.add('selected');
+      selTicket = card.dataset.ticket;
+      document.getElementById('ticket-err')?.remove();
+      updateAwardStep();
+      updateSummary();
+    });
+  });
+}
+
+function updateAwardStep() {
+  const step = document.getElementById('step-awards');
+  if (!step) return;
+  step.style.display = selTicket === 'award' ? 'block' : 'none';
+}
+
+/* Award tag selector — rendered by sector */
+function renderRegAwards() {
+  const container = document.getElementById('award-sectors-reg');
+  if (!container) return;
+  AWARD_SECTORS.forEach(sector => {
+    const div = document.createElement('div');
+    div.className = 'award-sector';
+    const isEco = sector.type === 'eco';
+    div.innerHTML = `
+      <div class="award-sector-title">
+        <span class="sector-icon">${sector.icon}</span>
+        <span>${sector.label}</span>
+        <span class="sector-count">${sector.cats.length}</span>
+        ${isEco ? '<span class="badge badge-rose" style="margin-left:auto;">Ecosystem</span>' : ''}
+      </div>
+      <div class="award-tags-wrap" id="sector-${sector.id}"></div>`;
+    container.appendChild(div);
+
+    const wrap = document.getElementById('sector-' + sector.id);
+    sector.cats.forEach(cat => {
+      const tag = document.createElement('div');
+      tag.className = 'award-sel-tag' + (isEco ? ' eco-t' : '');
+      tag.innerHTML = `<span class="tag-check">○</span><span class="tag-text">${cat}</span>`;
+      tag.dataset.cat = cat;
+      tag.addEventListener('click', () => {
+        const on = tag.classList.toggle('on');
+        tag.querySelector('.tag-check').textContent = on ? '●' : '○';
+        if (on) {
+          if (selAwards.length >= 5) {
+            tag.classList.remove('on');
+            tag.querySelector('.tag-check').textContent = '○';
+            showAwardLimitToast();
+            return;
+          }
+          selAwards.push(cat);
+        } else {
+          selAwards = selAwards.filter(a => a !== cat);
+        }
+        document.getElementById('award-err')?.remove();
+        updateSummary();
+      });
+      wrap.appendChild(tag);
+    });
+  });
+}
+
+function showAwardLimitToast() {
+  const t = document.createElement('div');
+  t.style.cssText = `position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#2a0940;border:1px solid #c9952a;color:#f0dfc8;padding:12px 24px;border-radius:6px;font-size:.9rem;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.5);`;
+  t.textContent = 'Maximum 5 award categories allowed per registration.';
+  document.body.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+/* Summary sidebar */
+function updateSummary() {
+  const ticket = TICKET_TYPES[selTicket];
+  const qty = selTicket === 'award' ? Math.max(1, selAwards.length) : 1;
+  const total = ticket ? ticket.price * qty : 0;
+
+  const el = id => document.getElementById(id);
+  if (el('sum-pass'))   el('sum-pass').textContent   = ticket ? ticket.label : '—';
+  if (el('sum-qty'))    el('sum-qty').textContent    = selTicket === 'award' ? `×${qty} ${qty === 1 ? 'category' : 'categories'}` : '×1';
+  if (el('sum-unit'))   el('sum-unit').textContent   = ticket ? '₹' + ticket.price.toLocaleString('en-IN') + ' each' : '—';
+  if (el('sum-total'))  el('sum-total').textContent  = total ? '₹' + total.toLocaleString('en-IN') : '—';
+  if (el('sum-award-list')) {
+    if (selAwards.length > 0) {
+      el('sum-award-list').innerHTML = selAwards.map(a => `<li style="font-size:.8125rem;color:var(--gold);padding:3px 0;border-bottom:1px solid var(--gold-lt);">${a}</li>`).join('');
+      el('sum-award-list').parentElement.style.display = 'block';
+    } else {
+      el('sum-award-list').parentElement.style.display = 'none';
+    }
+  }
+}
+
+/* Validation */
+function vField(inputId, wrapId, fn) {
+  const val = document.getElementById(inputId).value.trim();
+  const wrap = document.getElementById(wrapId);
+  const ok = fn(val);
+  wrap.classList.toggle('error', !ok);
+  return ok;
+}
+
+function handleSubmit() {
+  let ok = true;
+  ok = vField('f-fn',  'w-fn',  v => v.length > 0) && ok;
+  ok = vField('f-ln',  'w-ln',  v => v.length > 0) && ok;
+  ok = vField('f-em',  'w-em',  v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)) && ok;
+  ok = vField('f-ph',  'w-ph',  v => v.length > 5) && ok;
+  ok = vField('f-org', 'w-org', v => v.length > 0) && ok;
+  ok = vField('f-des', 'w-des', v => v.length > 0) && ok;
+  ok = vField('f-cty', 'w-cty', v => v.length > 0) && ok;
+  ok = vField('f-sec', 'w-sec', v => v !== '') && ok;
+
+  if (!selTicket) {
+    document.getElementById('ticket-err')?.remove();
+    const err = document.createElement('p');
+    err.id = 'ticket-err'; err.style.cssText = 'color:var(--red);font-size:.875rem;margin-top:10px;';
+    err.textContent = 'Please select a pass to continue.';
+    document.getElementById('ticket-stack')?.appendChild(err);
+    ok = false;
+  }
+
+  if (selTicket === 'award' && selAwards.length === 0) {
+    document.getElementById('award-err')?.remove();
+    const err = document.createElement('p');
+    err.id = 'award-err'; err.style.cssText = 'color:var(--red);font-size:.875rem;margin-top:10px;';
+    err.textContent = 'Please select at least one award category.';
+    document.getElementById('award-sectors-reg')?.after(err);
+    ok = false;
+  }
+
+  if (!document.getElementById('f-terms').checked) {
+    alert('Please agree to the Terms & Conditions to proceed.'); ok = false;
+  }
+
+  if (!ok) {
+    document.querySelector('.field.error, #ticket-err')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
+  }
+
+  const ticket = TICKET_TYPES[selTicket];
+  const qty = selTicket === 'award' ? selAwards.length : 1;
+
+  currentReg = {
+    firstname:   document.getElementById('f-fn').value.trim(),
+    lastname:    document.getElementById('f-ln').value.trim(),
+    email:       document.getElementById('f-em').value.trim(),
+    phone:       document.getElementById('f-ph').value.trim(),
+    org:         document.getElementById('f-org').value.trim(),
+    designation: document.getElementById('f-des').value.trim(),
+    city:        document.getElementById('f-cty').value.trim(),
+    sector:      document.getElementById('f-sec').value,
+    referral:    document.getElementById('f-ref').value,
+    notes:       document.getElementById('f-notes').value.trim(),
+    newsletter:  document.getElementById('f-news').checked,
+    ticket:      selTicket,
+    awards:      selAwards.slice(),
+    amount:      ticket.price * qty,
+    qty,
+  };
+
+  openPayModal();
+}
+
+/* ═════════════════════════════════
+   PAYMENT MODAL
+   ═════════════════════════════════ */
+
+function openPayModal() {
+  const reg = currentReg;
+  document.getElementById('pm-name').textContent   = reg.firstname + ' ' + reg.lastname;
+  document.getElementById('pm-pass').textContent   = TICKET_TYPES[reg.ticket].label;
+  document.getElementById('pm-qty').textContent    = reg.ticket === 'award' ? `×${reg.qty} categories` : '×1 person';
+  document.getElementById('pm-total').textContent  = '₹' + reg.amount.toLocaleString('en-IN');
+  document.getElementById('pay-form').style.display = 'block';
+  document.getElementById('pay-spin').style.display = 'none';
+  setPayMethod('upi');
+  document.getElementById('payment-modal').classList.add('open');
+}
+
+function closePayModal() {
+  document.getElementById('payment-modal').classList.remove('open');
+}
+
+function setPayMethod(m) {
+  selPayMethod = m;
+  document.querySelectorAll('.pay-method').forEach(el => el.classList.toggle('active', el.dataset.m === m));
+  ['upi','card','bank'].forEach(t => {
+    const el = document.getElementById('pay-' + t);
+    if (el) el.style.display = t === m ? 'flex' : 'none';
+  });
+}
+
+function processPayment() {
+  document.getElementById('pay-form').style.display = 'none';
+  document.getElementById('pay-spin').style.display = 'block';
+  setTimeout(finaliseReg, 2400);
+}
+
+/* ═════════════════════════════════
+   FINALISE → RECEIPT
+   ═════════════════════════════════ */
+
+function finaliseReg() {
+  closePayModal();
+  const reg = currentReg;
+  reg.id        = 'WPSA26-' + Math.random().toString(36).slice(2,8).toUpperCase();
+  reg.status    = 'confirmed';
+  reg.payMethod = selPayMethod;
+  reg.checkedIn = false;
+  reg.pitchFiles = [];
+  reg.timestamp = new Date().toISOString();
+
+  const regs = getRegs();
+  regs.push(reg);
+  saveRegs(regs);
+
+  /* Show success + receipt */
+  document.getElementById('reg-form-wrap').style.display = 'none';
+  document.getElementById('reg-success').style.display   = 'block';
+  renderReceipt(reg);
+  document.getElementById('receipt-wrap').classList.add('show');
+  if (reg.ticket === 'startup') document.getElementById('pitch-panel').classList.add('show');
+}
+
+/* ═════════════════════════════════
+   QR SVG (deterministic visual)
+   ═════════════════════════════════ */
+
+function makeQR(data) {
+  const hash = n => [...data].reduce((h,c) => ((h << 5) - h + c.charCodeAt(0)) | 0, n);
+  const size = 21; const cells = [];
+  for (let r = 0; r < size; r++) {
+    for (let c = 0; c < size; c++) {
+      const inFP = (r < 7 && c < 7) || (r < 7 && c >= size-7) || (r >= size-7 && c < 7);
+      const isTimingR = r === 6, isTimingC = c === 6;
+      let bit;
+      if (inFP) bit = (r===0||r===6||c===0||c===6)||(r>=2&&r<=4&&c>=2&&c<=4);
+      else if (isTimingR || isTimingC) bit = (r+c)%2===0;
+      else bit = (Math.abs(hash(r*size+c)*2654435761)|0) % 3 === 0;
+      if (bit) cells.push(`<rect x="${c*4}" y="${r*4}" width="4" height="4"/>`);
+    }
+  }
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 84 84" style="background:#fff;padding:6px;border-radius:4px;width:108px;height:108px;display:block;margin:0 auto;"><g fill="#c9952a">${cells.join('')}</g></svg>`;
+}
+
+function renderReceipt(reg) {
+  const ticket = TICKET_TYPES[reg.ticket];
+  const el = id => document.getElementById(id);
+  el('rcpt-qr').innerHTML    = makeQR(reg.id + '|' + reg.email);
+  el('rcpt-id').textContent  = reg.id;
+  el('rcpt-name').textContent = reg.firstname + ' ' + reg.lastname;
+  el('rcpt-email').textContent = reg.email;
+  el('rcpt-org').textContent  = reg.org;
+  el('rcpt-pass').textContent = ticket.label;
+  el('rcpt-amt').textContent  = '₹' + reg.amount.toLocaleString('en-IN');
+  el('rcpt-pay').textContent  = reg.payMethod.toUpperCase();
+  el('rcpt-date').textContent = new Date(reg.timestamp).toLocaleDateString('en-IN',{day:'numeric',month:'long',year:'numeric'});
+  if (reg.awards.length > 0) {
+    el('rcpt-awards-row').style.display = '';
+    el('rcpt-awards').textContent = reg.awards.join(' · ');
+  }
+}
+
+function printReceipt() {
+  const html = document.getElementById('receipt-wrap').innerHTML;
+  const w = window.open('','_blank','width=640,height=900');
+  w.document.write(`<!DOCTYPE html><html><head><title>WPSA 2026 Receipt — ${currentReg?.id||''}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+  <style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:Inter,sans-serif;background:#0e0115;color:#e8d8c8;padding:32px}
+  .receipt-box{max-width:480px;margin:0 auto;border:1px solid #c9952a;border-radius:8px;overflow:hidden}
+  .receipt-head{background:linear-gradient(135deg,#2a0940,#380c55);padding:28px;text-align:center;border-bottom:1px solid #c9952a}
+  .receipt-head img{height:40px;margin:0 auto 12px}
+  .receipt-head h3{font-family:Playfair Display,serif;font-size:1.2rem;color:#fdf8f2;margin-bottom:4px}
+  .receipt-head p{font-size:.8rem;color:#c9952a}
+  .receipt-body{padding:24px;background:#1f062f}
+  .receipt-qr-wrap{text-align:center;margin-bottom:18px}
+  .receipt-row{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid rgba(201,149,42,.18);font-size:.875rem}
+  .receipt-row:last-child{border-bottom:none}
+  .rl{color:#906878}.rv{color:#fdf8f2;font-weight:600;text-align:right;word-break:break-word;max-width:280px}
+  .receipt-foot{padding:16px;background:#2a0940;text-align:center;font-size:.8rem;color:#604858;line-height:1.8}
+  .btn{display:block;margin:24px auto 0;padding:13px 36px;background:#c9952a;border:none;border-radius:3px;color:#0e0115;font-size:.8125rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;cursor:pointer}</style></head><body>
+  ${html}<button class="btn" onclick="window.print()">🖨 Print Receipt</button></body></html>`);
+  w.document.close();
+}
+
+function downloadReceiptTxt() {
+  const reg = currentReg;
+  if (!reg) return;
+  const ticket = TICKET_TYPES[reg.ticket];
+  const text = [
+    '╔' + '═'.repeat(48) + '╗',
+    '║  WPSA 2026 — ENTRY RECEIPT' + ' '.repeat(21) + '║',
+    '║  11th Annual Women Power Summit & Awards  ║',
+    '╠' + '═'.repeat(48) + '╣',
+    `║  Reg ID    : ${reg.id.padEnd(34)}║`,
+    `║  Name      : ${(reg.firstname+' '+reg.lastname).slice(0,34).padEnd(34)}║`,
+    `║  Email     : ${reg.email.slice(0,34).padEnd(34)}║`,
+    `║  Org       : ${reg.org.slice(0,34).padEnd(34)}║`,
+    `║  Pass      : ${ticket.label.slice(0,34).padEnd(34)}║`,
+    `║  Amount    : ₹${String(reg.amount.toLocaleString('en-IN')).padEnd(33)}║`,
+    `║  Payment   : ${reg.payMethod.toUpperCase().padEnd(34)}║`,
+    `║  Status    : CONFIRMED${' '.repeat(26)}║`,
+    reg.awards.length > 0 ? `║  Categories: ${reg.awards.slice(0,2).join(', ').slice(0,34).padEnd(34)}║` : null,
+    '╠' + '═'.repeat(48) + '╣',
+    '║  Date   : Saturday, 23rd May 2026         ║',
+    '║  Time   : 09:30 AM – 06:00 PM IST         ║',
+    '║  Venue  : NSE, BKC, Mumbai                ║',
+    '╚' + '═'.repeat(48) + '╝',
+    '',
+    `Registered on: ${new Date(reg.timestamp).toLocaleString('en-IN')}`,
+    'For queries: connect@billenniumdivas.fund',
+    '#WPSA2026 · #BreakFree · #BeThePower',
+  ].filter(l => l !== null).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain' }));
+  a.download = `WPSA2026-Receipt-${reg.id}.txt`;
+  a.click();
+}
+
+/* ═════════════════════════════════
+   PITCH UPLOAD
+   ═════════════════════════════════ */
+
+const PITCH_TYPES = ['.pdf','.ppt','.pptx','.key','.odp','.pps','.ppsx'];
+const PITCH_MAX_MB = 50;
+
+function initPitchUpload() {
+  const zone  = document.getElementById('drop-zone');
+  const input = document.getElementById('pitch-input');
+  if (!zone || !input) return;
+  zone.addEventListener('click', () => input.click());
+  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('over'));
+  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('over'); addFiles([...e.dataTransfer.files]); });
+  input.addEventListener('change', () => addFiles([...input.files]));
+}
+
+function addFiles(files) {
+  files.forEach(f => {
+    const ext = '.' + f.name.split('.').pop().toLowerCase();
+    if (!PITCH_TYPES.includes(ext)) { alert(`"${ext}" not allowed. Accepted: ${PITCH_TYPES.join(', ')}`); return; }
+    if (f.size > PITCH_MAX_MB * 1024 * 1024) { alert(`Max file size is ${PITCH_MAX_MB} MB.`); return; }
+    if (pitchFiles.some(x => x.name === f.name)) return;
+    pitchFiles.push(f);
+  });
+  renderPitchFiles();
+  /* Update stored record */
+  if (currentReg) {
+    const regs = getRegs();
+    const idx = regs.findIndex(r => r.id === currentReg.id);
+    if (idx >= 0) { regs[idx].pitchFiles = pitchFiles.map(f => f.name); saveRegs(regs); }
+  }
+}
+
+function removePitchFile(i) {
+  pitchFiles.splice(i, 1);
+  renderPitchFiles();
+}
+
+function renderPitchFiles() {
+  const list = document.getElementById('pitch-file-list');
+  if (!list) return;
+  list.innerHTML = '';
+  pitchFiles.forEach((f, i) => {
+    const div = document.createElement('div');
+    div.className = 'pitch-file';
+    div.innerHTML = `<div><div class="pitch-file-name">📎 ${f.name}</div><div class="pitch-file-size">${(f.size/1048576).toFixed(2)} MB</div></div><button class="pitch-file-del" onclick="removePitchFile(${i})">✕</button>`;
+    list.appendChild(div);
+  });
+  const status = document.getElementById('pitch-status');
+  if (status) status.textContent = pitchFiles.length > 0 ? `✅ ${pitchFiles.length} file(s) ready to submit` : '';
+}
+
+/* ═════════════════════════════════
+   MOBILE NAV HAMBURGER
+   ═════════════════════════════════ */
+
+function initMobileNav() {
+  const hamburger = document.getElementById('nav-hamburger');
+  const mobileMenu = document.getElementById('nav-mobile-menu');
+  if (!hamburger || !mobileMenu) return;
+  hamburger.addEventListener('click', () => {
+    hamburger.classList.toggle('open');
+    mobileMenu.classList.toggle('open');
+  });
+  document.querySelectorAll('.nav-mobile-link').forEach(link => {
+    link.addEventListener('click', () => {
+      showPage(link.dataset.page);
+      document.querySelectorAll('.nav-mobile-link').forEach(l => l.classList.remove('active'));
+      link.classList.add('active');
+    });
+  });
+}
+
+/* ═════════════════════════════════
+   INIT
+   ═════════════════════════════════ */
+
+document.addEventListener('DOMContentLoaded', () => {
+  /* Auth */
+  updateNavAuth(getSession());
+  document.getElementById('nav-auth-btn')?.addEventListener('click', handleNavAuth);
+  document.getElementById('auth-close')?.addEventListener('click', closeAuthModal);
+  document.getElementById('auth-submit-btn')?.addEventListener('click', handleAuthSubmit);
+  document.getElementById('auth-switch-reg')?.addEventListener('click', () => {
+    const mode = document.getElementById('auth-modal').dataset.mode;
+    setAuthMode(mode === 'login' ? 'register' : 'login');
+  });
+  document.getElementById('auth-pass')?.addEventListener('keydown', e => { if (e.key === 'Enter') handleAuthSubmit(); });
+
+  /* Nav */
+  document.querySelectorAll('.nav-link').forEach(l => l.addEventListener('click', () => showPage(l.dataset.page)));
+  document.getElementById('nav-cta')?.addEventListener('click', () => showPage('register'));
+  initMobileNav();
+
+  /* Hero buttons */
+  document.getElementById('hero-apply')?.addEventListener('click', () => showPage('register'));
+  document.getElementById('hero-schedule')?.addEventListener('click', () => {
+    showPage('home');
+    setTimeout(() => document.getElementById('schedule')?.scrollIntoView({ behavior:'smooth', block:'start' }), 120);
+  });
+  document.getElementById('pricing-apply')?.addEventListener('click', () => showPage('register'));
+
+  /* Award filter (home) */
+  document.querySelectorAll('.filter-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderHomeAwards(btn.dataset.filter);
+    });
+  });
+
+  /* Dynamic renders */
+  renderHomeAwards();
+  renderSchedule();
+  renderJury();
+  renderGallery();
+  renderPartners();
+  renderSocials();
+  renderRegAwards();
+  startCountdown();
+  initTicketCards();
+  initPitchUpload();
+  updateAwardStep();
+  updateSummary();
+
+  /* Register submit */
+  document.getElementById('submit-btn')?.addEventListener('click', handleSubmit);
+
+  /* Payment methods */
+  document.querySelectorAll('.pay-method').forEach(el => el.addEventListener('click', () => setPayMethod(el.dataset.m)));
+  document.getElementById('pay-confirm')?.addEventListener('click', processPayment);
+  document.getElementById('pay-close')?.addEventListener('click', closePayModal);
+
+  /* Receipt actions */
+  document.getElementById('rcpt-print')?.addEventListener('click', printReceipt);
+  document.getElementById('rcpt-dl')?.addEventListener('click', downloadReceiptTxt);
+
+  showPage('home');
+});
