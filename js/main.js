@@ -603,7 +603,7 @@ async function finaliseReg() {
   currentReg = null;
 }
 
-  // Clear form
+  // Clear form 
   currentReg = null;
 
 /* ═════════════════════════════════
