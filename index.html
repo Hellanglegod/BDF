@@ -726,14 +726,18 @@
   </div>
 </footer>
 
-<!-- Firebase SDK (loads only if you fill in firebase-config.js) -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-<!-- WPSA config + data layer — MUST load before main.js -->
+<!-- 🔥 Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+<!-- Your Config -->
 <script src="js/firebase-config.js"></script>
+
+<!-- Database Layer -->
 <script src="js/db.js"></script>
-<script src="js/main.js"></script>
+
+<!-- Main JavaScript -->
+<script src="js/admin.js"></script>
 </body>
 </html>
