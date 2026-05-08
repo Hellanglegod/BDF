@@ -553,8 +553,8 @@ function processPayment() {
 
 async function finaliseReg() {
   closePayModal();
-  const reg = currentReg;
   
+  const reg = { ...currentReg };
   reg.id        = 'WPSA26-' + Math.random().toString(36).slice(2,8).toUpperCase();
   reg.status    = 'confirmed';
   reg.payMethod = selPayMethod || 'upi';
@@ -562,38 +562,50 @@ async function finaliseReg() {
   reg.pitchFiles = [];
   reg.timestamp = new Date().toISOString();
 
-  console.log('Saving registration:', reg);
+  console.log('Attempting to save registration:', reg);
+
+  let saved = false;
 
   try {
-    // Try Firebase
     await DB.saveReg(reg);
-    console.log('%c✅ Registration SAVED to Firebase!', 'color:#4caf50; font-weight:bold');
+    console.log('%c✅ Registration saved to Firebase!', 'color:#4caf50;font-weight:bold');
+    saved = true;
   } catch (e) {
     console.error('Firebase save failed:', e);
-    // Fallback to localStorage
+  }
+
+  // Fallback
+  if (!saved) {
     try {
       const regs = await DB.getRegs();
       regs.push(reg);
       localStorage.setItem('wpsa_regs', JSON.stringify(regs));
       console.log('%c✅ Saved using localStorage fallback', 'color:#ff9800');
+      saved = true;
     } catch (e2) {
-      console.error('Even fallback failed', e2);
+      console.error('All save methods failed', e2);
     }
   }
 
-  // Show success screen
-  document.getElementById('reg-form-wrap').style.display = 'none';
-  document.getElementById('reg-success').style.display   = 'block';
-  renderReceipt(reg);
-  document.getElementById('receipt-wrap').classList.add('show');
-
-  if (reg.ticket === 'startup') {
-    document.getElementById('pitch-panel').classList.add('show');
+  if (saved) {
+    document.getElementById('reg-form-wrap').style.display = 'none';
+    document.getElementById('reg-success').style.display   = 'block';
+    renderReceipt(reg);
+    document.getElementById('receipt-wrap').classList.add('show');
+    
+    if (reg.ticket === 'startup') {
+      document.getElementById('pitch-panel').classList.add('show');
+    }
+  } else {
+    alert('Registration failed to save. Please try again.');
   }
+
+  currentReg = null;
+}
 
   // Clear form
   currentReg = null;
-}
+
 /* ═════════════════════════════════
    QR SVG (deterministic visual)
    ═════════════════════════════════ */
