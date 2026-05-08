@@ -1,83 +1,15 @@
-/* =========================
-   LocalStorage helper
-========================= */
-const LS = {
-  get(key) {
-    try {
-      return JSON.parse(localStorage.getItem(key));
-    } catch {
-      return null;
-    }
-  },
-
-  set(key, value) {
-    localStorage.setItem(key, JSON.stringify(value));
-  }
-};
-
-/* =========================
-   Firebase internals
-========================= */
-let _db = null;
-let _auth = null;
-let _firebaseInitTried = false;
-
-function _firebaseReady() {
-  return typeof firebase !== 'undefined';
-}
-
-function _init() {
-  if (_firebaseInitTried) return;
-
-  _firebaseInitTried = true;
-
-  try {
-    if (_firebaseReady()) {
-
-      // ONLY initialize if not already initialized
-      if (!firebase.apps.length) {
-
-        firebase.initializeApp({
-          // For Firebase JS SDK v720.0 and later, measurementId is optional
-  apiKey: "AIzaSyBGlJauNHYgTqWobGKrMi1Qn9vvGfKpDTI",
-  authDomain: "wpsa2026.firebaseapp.com",
-  projectId: "wpsa2026",
-  storageBucket: "wpsa2026.firebasestorage.app",
-  messagingSenderId: "520552769766",
-  appId: "1:520552769766:web:b9836ab33d03292c05f327",
-  measurementId: "G-V8LK7CHGEJ"
-        });
-
-      }
-
-      _db = firebase.firestore();
-      _auth = firebase.auth();
-
-      console.log("Firebase initialized successfully");
-    }
-  } catch (err) {
-    console.error("Firebase init failed:", err);
-  }
-}
-
-/* =========================
-   Database API
-========================= */
 const DB = {
 
-  /* Firebase status */
   isFirebase() {
     _init();
     return !!_db;
   },
 
-  /* Auth instance FIX */
   get auth() {
     _init();
     return _auth;
   },
 
-  /* Save User FIX */
   async saveUser(user) {
     _init();
 
@@ -99,30 +31,29 @@ const DB = {
   },
 
   async addLog(log) {
-  _init();
+    _init();
 
-  const logData = {
-    ...log,
-    timestamp: Date.now()
-  };
+    const logData = {
+      ...log,
+      timestamp: Date.now()
+    };
 
-  if (_db) {
+    if (_db) {
 
-    await _db
-      .collection('logs')
-      .add(logData);
+      await _db
+        .collection('logs')
+        .add(logData);
 
-  } else {
+    } else {
 
-    const logs = LS.get('wpsa_logs') || [];
+      const logs = LS.get('wpsa_logs') || [];
 
-    logs.unshift(logData);
+      logs.unshift(logData);
 
-    LS.set('wpsa_logs', logs);
-  }
-},
+      LS.set('wpsa_logs', logs);
+    }
+  },
 
-  /* Registrations */
   async getRegs() {
     _init();
 
