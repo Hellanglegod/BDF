@@ -276,19 +276,18 @@
   </div><!-- /admin-body -->
 </div><!-- /admin-app -->
 
-<!-- Firebase SDK -->
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
-<!-- Config + data layer — MUST load before admin.js -->
+<!-- 🔥 Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+
+<!-- Your Config -->
 <script src="js/firebase-config.js"></script>
+
+<!-- Database Layer -->
 <script src="js/db.js"></script>
-<script src="js/admin.js"></script>
-<script>
-/* ── export-btn-inline wires to same function ── */
-document.getElementById('export-btn-inline')?.addEventListener('click', exportCSV);
-document.getElementById('export-btn')?.addEventListener('click', exportCSV);
-</script>
+
+<!-- Main JavaScript -->
+<script src="js/main.js"></script>
 </body>
 </html>

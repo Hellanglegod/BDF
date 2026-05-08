@@ -111,7 +111,7 @@ After making changes locally, push them to GitHub:
 
 ```bash
 git add .
-git commit -m "Update: Implemented FIREBASE"
+git commit -m "Update: Fixed path"
 git push
 ```
 
