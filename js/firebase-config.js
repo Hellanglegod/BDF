@@ -8,11 +8,9 @@ const FIREBASE_CONFIG = {
   appId: "1:520552769766:web:b9836ab33d03292c05f327"
 };
 
-// Strong Admin Password - Change this before going live!
-const ADMIN_PASS = "JIHANCEO";   
+const ADMIN_PASS = "JIHANCEO";
 
-// Make them globally available
 window.FIREBASE_CONFIG = FIREBASE_CONFIG;
 window.ADMIN_PASS = ADMIN_PASS;
 
-console.log('%c✅ firebase-config.js loaded successfully', 'color:#4caf50; font-weight:bold');
+console.log('%c✅ firebase-config.js loaded with real config', 'color:#4caf50;font-weight:bold');
