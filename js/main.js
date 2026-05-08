@@ -554,32 +554,46 @@ function processPayment() {
 async function finaliseReg() {
   closePayModal();
   const reg = currentReg;
+  
   reg.id        = 'WPSA26-' + Math.random().toString(36).slice(2,8).toUpperCase();
   reg.status    = 'confirmed';
-  reg.payMethod = selPayMethod;
+  reg.payMethod = selPayMethod || 'upi';
   reg.checkedIn = false;
   reg.pitchFiles = [];
   reg.timestamp = new Date().toISOString();
 
+  console.log('Saving registration:', reg);
+
   try {
+    // Try Firebase
     await DB.saveReg(reg);
-    console.log('%c✅ Registration saved successfully!', 'color:#4caf50');
+    console.log('%c✅ Registration SAVED to Firebase!', 'color:#4caf50; font-weight:bold');
   } catch (e) {
-    console.error('Save failed, trying localStorage fallback...', e);
-    // Fallback
-    const regs = (await DB.getRegs()) || [];
-    regs.push(reg);
-    localStorage.setItem('wpsa_regs', JSON.stringify(regs));
+    console.error('Firebase save failed:', e);
+    // Fallback to localStorage
+    try {
+      const regs = await DB.getRegs();
+      regs.push(reg);
+      localStorage.setItem('wpsa_regs', JSON.stringify(regs));
+      console.log('%c✅ Saved using localStorage fallback', 'color:#ff9800');
+    } catch (e2) {
+      console.error('Even fallback failed', e2);
+    }
   }
 
-  // Show success
+  // Show success screen
   document.getElementById('reg-form-wrap').style.display = 'none';
   document.getElementById('reg-success').style.display   = 'block';
   renderReceipt(reg);
   document.getElementById('receipt-wrap').classList.add('show');
-  if (reg.ticket === 'startup') document.getElementById('pitch-panel').classList.add('show');
-}
 
+  if (reg.ticket === 'startup') {
+    document.getElementById('pitch-panel').classList.add('show');
+  }
+
+  // Clear form
+  currentReg = null;
+}
 /* ═════════════════════════════════
    QR SVG (deterministic visual)
    ═════════════════════════════════ */
