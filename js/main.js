@@ -562,40 +562,30 @@ async function finaliseReg() {
   reg.pitchFiles = [];
   reg.timestamp = new Date().toISOString();
 
-  console.log('💾 Saving registration:', reg);
+  console.log('💾 Trying to save:', reg);
 
   try {
     await DB.saveReg(reg);
-    console.log('%c✅ SUCCESS: Registration saved to Firebase!', 'color:#4caf50;font-weight:bold;font-size:16px');
+    console.log('%c✅ Registration SAVED successfully!', 'color:#4caf50;font-weight:bold;font-size:16px');
   } catch (e) {
-    console.error('Firebase failed, using fallback...', e);
-    try {
-      const regs = await DB.getRegs();
-      regs.push(reg);
-      localStorage.setItem('wpsa_regs', JSON.stringify(regs));
-      console.log('%c✅ Saved using localStorage fallback', 'color:#ff9800');
-    } catch (e2) {
-      console.error('All save methods failed', e2);
-      alert('Could not save registration. Please try again.');
-      return;
-    }
+    console.error('Firebase failed → fallback', e);
+    const regs = await DB.getRegs();
+    regs.push(reg);
+    localStorage.setItem('wpsa_regs', JSON.stringify(regs));
+    console.log('%c✅ Saved using localStorage fallback', 'color:#ff9800');
   }
 
-  // Show success UI
+  // Show success
   document.getElementById('reg-form-wrap').style.display = 'none';
   document.getElementById('reg-success').style.display   = 'block';
   renderReceipt(reg);
   document.getElementById('receipt-wrap').classList.add('show');
 
-  if (reg.ticket === 'startup') {
-    document.getElementById('pitch-panel').classList.add('show');
-  }
+  if (reg.ticket === 'startup') document.getElementById('pitch-panel').classList.add('show');
 
   currentReg = null;
 }
 
-  // Clear form 
-  currentReg = null;
 
 /* ═════════════════════════════════
    QR SVG (deterministic visual)
