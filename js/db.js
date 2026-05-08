@@ -1,3 +1,82 @@
+/* =========================
+   Local Storage Helper
+========================= */
+
+const LS = {
+
+  get(key) {
+    try {
+      return JSON.parse(localStorage.getItem(key));
+    } catch {
+      return null;
+    }
+  },
+
+  set(key, value) {
+    localStorage.setItem(key, JSON.stringify(value));
+  }
+
+};
+
+
+/* =========================
+   Firebase Internals
+========================= */
+
+let _db = null;
+let _auth = null;
+let _firebaseInitTried = false;
+
+function _firebaseReady() {
+  return typeof firebase !== "undefined";
+}
+
+function _init() {
+
+  if (_firebaseInitTried) return;
+
+  _firebaseInitTried = true;
+
+  try {
+
+    if (_firebaseReady()) {
+
+      // Prevent duplicate init
+      if (!firebase.apps.length) {
+
+        firebase.initializeApp({
+
+          apiKey: "AIzaSyB61JauHNYgTqMobGKRM11Qn9vvGfKpDTI",
+          authDomain: "wpsa2026.firebaseapp.com",
+          projectId: "wpsa2026",
+          storageBucket: "wpsa2026.firebasestorage.app",
+          messagingSenderId: "520552769766",
+          appId: "1:520552769766:web:b9836ab33d03292c05f327"
+
+        });
+
+      }
+
+      _db = firebase.firestore();
+      _auth = firebase.auth();
+
+      console.log("Firebase initialized");
+
+    }
+
+  } catch (err) {
+
+    console.error("Firebase init failed:", err);
+
+  }
+
+}
+
+
+/* =========================
+   Database API
+========================= */
+
 const DB = {
 
   isFirebase() {
@@ -11,26 +90,30 @@ const DB = {
   },
 
   async saveUser(user) {
+
     _init();
 
     if (_db) {
 
       await _db
-        .collection('users')
+        .collection("users")
         .doc(user.uid)
         .set(user);
 
     } else {
 
-      const users = LS.get('wpsa_users') || [];
+      const users = LS.get("wpsa_users") || [];
 
       users.push(user);
 
-      LS.set('wpsa_users', users);
+      LS.set("wpsa_users", users);
+
     }
+
   },
 
   async addLog(log) {
+
     _init();
 
     const logData = {
@@ -41,27 +124,30 @@ const DB = {
     if (_db) {
 
       await _db
-        .collection('logs')
+        .collection("logs")
         .add(logData);
 
     } else {
 
-      const logs = LS.get('wpsa_logs') || [];
+      const logs = LS.get("wpsa_logs") || [];
 
       logs.unshift(logData);
 
-      LS.set('wpsa_logs', logs);
+      LS.set("wpsa_logs", logs);
+
     }
+
   },
 
   async getRegs() {
+
     _init();
 
     if (_db) {
 
       const snap = await _db
-        .collection('registrations')
-        .orderBy('timestamp', 'desc')
+        .collection("registrations")
+        .orderBy("timestamp", "desc")
         .get();
 
       return snap.docs.map(doc => ({
@@ -71,16 +157,18 @@ const DB = {
 
     }
 
-    return LS.get('wpsa_regs') || [];
+    return LS.get("wpsa_regs") || [];
+
   },
 
   async saveReg(reg) {
+
     _init();
 
     if (_db) {
 
       const ref = await _db
-        .collection('registrations')
+        .collection("registrations")
         .add({
           ...reg,
           timestamp: Date.now()
@@ -90,34 +178,39 @@ const DB = {
 
     }
 
-    const regs = LS.get('wpsa_regs') || [];
+    const regs = LS.get("wpsa_regs") || [];
 
     reg.id = Date.now().toString();
 
     regs.unshift(reg);
 
-    LS.set('wpsa_regs', regs);
+    LS.set("wpsa_regs", regs);
 
     return reg.id;
+
   },
 
   async deleteReg(id) {
+
     _init();
 
     if (_db) {
 
       await _db
-        .collection('registrations')
+        .collection("registrations")
         .doc(id)
         .delete();
 
       return;
+
     }
 
-    let regs = LS.get('wpsa_regs') || [];
+    let regs = LS.get("wpsa_regs") || [];
 
     regs = regs.filter(r => r.id !== id);
 
-    LS.set('wpsa_regs', regs);
+    LS.set("wpsa_regs", regs);
+
   }
+
 };
