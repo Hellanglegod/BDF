@@ -928,6 +928,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!isAuthed) { setPendingTarget('register'); openAuth('login'); return; }
     showPage('register');
   });
+  
+  document.getElementById('nav-auth-btn')?.addEventListener('click', () => {
+    const isAuthed = !!(sessionStorage.getItem('wpsa_user_email') || firebase?.auth?.()?.currentUser);
+    if (!isAuthed) { setPendingTarget('register'); openAuth('login'); return; }
+    showPage('register');
+  });
 
   initMobileNav();
 
