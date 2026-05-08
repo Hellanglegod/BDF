@@ -45,24 +45,26 @@ let _auth = null;
 
 function _init() {
   if (_db) return;
+  
   if (!_firebaseReady()) {
-    console.warn('[DB] Firebase config not found - using localStorage fallback');
+    console.warn('[DB] Using localStorage fallback (Firebase not configured)');
     return;
   }
 
   try {
+    // Initialize Firebase if not already done
     if (!firebase.apps.length) {
       firebase.initializeApp(FIREBASE_CONFIG);
-      console.log('%c[Firebase] Initialized successfully', 'color: #4caf50; font-weight: bold');
+      console.log('%c✅ Firebase App Initialized Successfully', 'color:#4caf50;font-weight:bold');
     }
+
     _db = firebase.firestore();
     _auth = firebase.auth();
-    
-    _db.enablePersistence({ synchronizeTabs: true }).catch(e => {
-      console.warn('[DB] Persistence failed (normal in some browsers)', e);
-    });
+
+    console.log('%c✅ Firestore & Auth Ready', 'color:#4caf50');
+
   } catch (e) {
-    console.error('[DB] Firebase init failed:', e);
+    console.error('❌ Firebase Init Failed:', e);
     _db = null;
   }
 }
