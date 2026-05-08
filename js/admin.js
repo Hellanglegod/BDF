@@ -1,5 +1,3 @@
-javascript
-
 /* ═══════════════════════════════════════════════
    WPSA 2026 · admin.js — Organiser Panel
    All data via DB layer (Firebase or localStorage)
