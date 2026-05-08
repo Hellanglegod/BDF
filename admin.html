@@ -6,7 +6,7 @@
   <meta name="robots" content="noindex, nofollow"/>
   <title>Organiser Panel — WPSA 2026</title>
   <link rel="icon" href="assets/img/favicon.png" type="image/png"/>
-  <link rel="stylesheet" href="css/admin.css"/>
+  <link rel="stylesheet" href="admin.css"/>
 </head>
 <body>
 
@@ -25,7 +25,7 @@
     </div>
     <p class="login-err" id="login-err">Incorrect password. Please try again.</p>
     <button class="btn btn-gold btn-full" id="login-btn">Sign In →</button>
-    <p class="login-hint">Default: <strong>wpsa2026@admin</strong> — change in <code>js/admin.js</code></p>
+    <p class="login-hint">Default: <strong>wpsa2026@admin</strong> — change in <code>js/firebase-config.js</code></p>
   </div>
 </div>
 
@@ -46,6 +46,7 @@
       </div>
     </div>
     <div class="admin-nav-right">
+      <span id="backend-pill" class="badge badge-amber" title="Checking backend…">Checking…</span>
       <button class="btn btn-ghost btn-sm" id="export-btn">⬇ Export CSV</button>
       <button class="btn btn-gold btn-sm" onclick="window.location.href='index.html'">← Live Site</button>
     </div>
@@ -275,6 +276,14 @@
   </div><!-- /admin-body -->
 </div><!-- /admin-app -->
 
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<!-- Config + data layer — MUST load before admin.js -->
+<script src="js/firebase-config.js"></script>
+<script src="js/db.js"></script>
 <script src="js/admin.js"></script>
 <script>
 /* ── export-btn-inline wires to same function ── */

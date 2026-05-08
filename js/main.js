@@ -757,11 +757,180 @@ function initMobileNav() {
    INIT
    ═════════════════════════════════ */
 
-document.addEventListener('DOMContentLoaded', () => {
-  /* Nav */
-  document.querySelectorAll('.nav-link').forEach(l => l.addEventListener('click', () => showPage(l.dataset.page)));
-  document.getElementById('nav-cta')?.addEventListener('click', () => showPage('register'));
+document.addEventListener('DOMContentLoaded', async () => {
+  // Auth/session gate
+  const auth = DB.auth;
+  const authEmailEl = document.getElementById('auth-modal');
+
+  // Ensure auth UI modal is wired
+  const authModal = document.getElementById('auth-modal');
+  const authClose = document.getElementById('auth-close');
+  const authErr = document.getElementById('auth-err');
+  const authSubmit = document.getElementById('auth-submit-btn');
+  const authSwitchReg = document.getElementById('auth-switch-reg');
+  const authMode = () => authModal?.dataset?.mode === 'register' ? 'register' : 'login';
+
+  const showAuthErr = (msg) => {
+    if (!authErr) return;
+    authErr.textContent = msg;
+    authErr.style.display = 'block';
+  };
+
+  const clearAuthErr = () => {
+    if (!authErr) return;
+    authErr.textContent = '';
+    authErr.style.display = 'none';
+  };
+
+  const setAuthMode = (m) => {
+    if (!authModal) return;
+    authModal.dataset.mode = m;
+    const title = document.getElementById('auth-modal-title');
+    const sub = document.getElementById('auth-modal-sub');
+    const nameRow = document.getElementById('auth-name-row');
+    if (title) title.textContent = m === 'register' ? 'Create your free account' : 'Sign In to Continue';
+    if (sub) sub.textContent = m === 'register'
+      ? 'Create an account to access registration, receipt download, and PitchPower uploads.'
+      : 'Log in to access your registration or apply for WPSA 2026.';
+    if (nameRow) nameRow.style.display = m === 'register' ? 'grid' : 'none';
+    if (authSubmit) authSubmit.textContent = m === 'register' ? 'Create account →' : 'Sign In →';
+  };
+
+  const openAuth = (m = 'login') => {
+    setAuthMode(m);
+    authModal?.classList.add('open');
+  };
+  const closeAuth = () => authModal?.classList.remove('open');
+
+  authClose?.addEventListener('click', closeAuth);
+  authModal?.addEventListener('click', (e) => {
+    if (e.target === authModal) closeAuth();
+  });
+
+  // Default mode
+  setAuthMode('login');
+
+  // Switch login/register
+  authSwitchReg?.addEventListener('click', () => {
+    const m = authMode();
+    setAuthMode(m === 'login' ? 'register' : 'login');
+  });
+
+  // Firebase Auth handlers
+  let currentUser = null;
+  if (auth && typeof firebase !== 'undefined') {
+    firebase.auth().onAuthStateChanged((u) => {
+      currentUser = u;
+      // Persist UI state for pitch + receipt access
+      if (u?.email) {
+        sessionStorage.setItem('wpsa_user_email', u.email);
+      } else {
+        sessionStorage.removeItem('wpsa_user_email');
+      }
+    });
+  }
+
+  const signIn = async () => {
+    clearAuthErr();
+    const email = (document.getElementById('auth-email')?.value || '').trim();
+    const password = (document.getElementById('auth-pass')?.value || '').trim();
+    if (!email || !password) { showAuthErr('Email and password are required.'); return; }
+
+    try {
+      if (!DB.auth) throw new Error('Firebase Auth not configured');
+      const cred = await firebase.auth().signInWithEmailAndPassword(email, password);
+      await DB.addLog({
+        email,
+        action: 'login',
+        status: 'success',
+        note: 'User signed in'
+      });
+      closeAuth();
+      // Resume to registration page
+      document.getElementById('page-register')?.classList.add('active');
+    } catch (e) {
+      showAuthErr(e?.message || 'Sign in failed. Please try again.');
+      const emailFallback = (document.getElementById('auth-email')?.value || '').trim();
+      await DB.addLog({
+        email: emailFallback || 'unknown',
+        action: 'login',
+        status: 'failed',
+        note: (e && e.code) ? e.code : 'error'
+      });
+    }
+  };
+
+  const signUp = async () => {
+    clearAuthErr();
+    const email = (document.getElementById('auth-email')?.value || '').trim();
+    const password = (document.getElementById('auth-pass')?.value || '').trim();
+    const fname = (document.getElementById('auth-fname')?.value || '').trim();
+    const lname = (document.getElementById('auth-lname')?.value || '').trim();
+
+    if (!email || !password || !fname || !lname) { showAuthErr('Please fill all required fields.'); return; }
+
+    try {
+      if (!DB.auth) throw new Error('Firebase Auth not configured');
+      const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
+      const u = cred.user;
+
+      // Save user profile mirror into DB
+      await DB.saveUser({
+        uid: u.uid,
+        email: u.email,
+        firstname: fname,
+        lastname: lname,
+        displayName: `${fname} ${lname}`.trim(),
+        createdAt: new Date().toISOString(),
+      });
+
+      await DB.addLog({
+        email,
+        action: 'register',
+        status: 'success',
+        note: 'User registered'
+      });
+
+      // After signup, proceed to sign in session
+      closeAuth();
+      document.getElementById('page-register')?.classList.add('active');
+    } catch (e) {
+      showAuthErr(e?.message || 'Create account failed.');
+      await DB.addLog({
+        email: email || 'unknown',
+        action: 'register',
+        status: 'failed',
+        note: (e && e.code) ? e.code : 'error'
+      });
+    }
+  };
+
+  authSubmit?.addEventListener('click', async () => {
+    const m = authMode();
+    if (m === 'register') await signUp(); else await signIn();
+  });
+
+  // When auth modal opens from Register button, store desired post-login target
+  const pendingTarget = () => sessionStorage.getItem('wpsa_pending_target');
+  const setPendingTarget = (v) => sessionStorage.setItem('wpsa_pending_target', v);
+
+  document.querySelectorAll('.nav-link').forEach(l => l.addEventListener('click', () => {
+    const target = l.dataset.page;
+    if (target === 'register') {
+      const isAuthed = !!(sessionStorage.getItem('wpsa_user_email') || firebase?.auth?.()?.currentUser);
+      if (!isAuthed) { setPendingTarget('register'); openAuth('login'); return; }
+    }
+    showPage(target);
+  }));
+
+  document.getElementById('nav-cta')?.addEventListener('click', () => {
+    const isAuthed = !!(sessionStorage.getItem('wpsa_user_email') || firebase?.auth?.()?.currentUser);
+    if (!isAuthed) { setPendingTarget('register'); openAuth('login'); return; }
+    showPage('register');
+  });
+
   initMobileNav();
+
 
   /* Hero buttons */
   document.getElementById('hero-apply')?.addEventListener('click', () => showPage('register'));

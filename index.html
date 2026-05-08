@@ -6,7 +6,7 @@
   <meta name="description" content="11th Annual Women Power Summit & Awards 2026 — 23rd May, NSE Mumbai. Register, nominate, and pitch. Powered by Billennium Divas."/>
   <title>Women Power Summit & Awards 2026 | Billennium Divas</title>
   <link rel="icon" href="assets/img/favicon.png" type="image/png"/>
-  <link rel="stylesheet" href="css/styles.css"/>
+  <link rel="stylesheet" href="styles.css"/>
 </head>
 <body>
 
@@ -726,6 +726,14 @@
   </div>
 </footer>
 
+<!-- Firebase SDK (loads only if you fill in firebase-config.js) -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-storage-compat.js"></script>
+<!-- WPSA config + data layer — MUST load before main.js -->
+<script src="js/firebase-config.js"></script>
+<script src="js/db.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>
