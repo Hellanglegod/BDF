@@ -98,6 +98,30 @@ const DB = {
     }
   },
 
+  async addLog(log) {
+  _init();
+
+  const logData = {
+    ...log,
+    timestamp: Date.now()
+  };
+
+  if (_db) {
+
+    await _db
+      .collection('logs')
+      .add(logData);
+
+  } else {
+
+    const logs = LS.get('wpsa_logs') || [];
+
+    logs.unshift(logData);
+
+    LS.set('wpsa_logs', logs);
+  }
+},
+
   /* Registrations */
   async getRegs() {
     _init();
