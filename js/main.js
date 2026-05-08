@@ -561,20 +561,18 @@ async function finaliseReg() {
   reg.pitchFiles = [];
   reg.timestamp = new Date().toISOString();
 
-  /* ── Save to Firebase (or localStorage fallback) ── */
   try {
     await DB.saveReg(reg);
-    await DB.addLog({
-      email:  reg.email,
-      action: 'registration_complete',
-      status: 'success',
-      note:   `${reg.id} · ${reg.ticket} · ₹${reg.amount.toLocaleString('en-IN')}`,
-    });
+    console.log('%c✅ Registration saved successfully!', 'color:#4caf50');
   } catch (e) {
-    console.error('[DB] Save reg failed:', e);
+    console.error('Save failed, trying localStorage fallback...', e);
+    // Fallback
+    const regs = (await DB.getRegs()) || [];
+    regs.push(reg);
+    localStorage.setItem('wpsa_regs', JSON.stringify(regs));
   }
 
-  /* Show success + receipt */
+  // Show success
   document.getElementById('reg-form-wrap').style.display = 'none';
   document.getElementById('reg-success').style.display   = 'block';
   renderReceipt(reg);
