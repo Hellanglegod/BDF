@@ -993,4 +993,44 @@ document.addEventListener('DOMContentLoaded', async () => {
   document.getElementById('rcpt-dl')?.addEventListener('click', downloadReceiptTxt);
 
   showPage('home');
+
+  /* =========================
+   AUTH STATE LISTENER
+========================= */
+
+firebase.auth().onAuthStateChanged((user) => {
+
+  const signInBtn = document.querySelector('#sign-in-btn');
+  const authModal = document.querySelector('#auth-modal');
+
+  if (user) {
+
+    console.log('Logged in:', user.email);
+
+    // Close modal
+    if (authModal) {
+      authModal.classList.remove('open');
+    }
+
+    // Update button text
+    if (signInBtn) {
+      signInBtn.textContent = user.email;
+    }
+
+    // Add logged-in class
+    document.body.classList.add('logged-in');
+
+  } else {
+
+    console.log('User signed out');
+
+    if (signInBtn) {
+      signInBtn.textContent = 'SIGN IN';
+    }
+
+    document.body.classList.remove('logged-in');
+
+  }
+
+});
 });
