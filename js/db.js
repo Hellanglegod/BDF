@@ -45,7 +45,6 @@ function _init() {
       if (!firebase.apps.length) {
 
         firebase.initializeApp({
-
           apiKey: "AIzaSyBGlJauNHYgTqWobGKrMi1Qn9vvGfKpDTI",
           authDomain: "wpsa2026.firebaseapp.com",
           projectId: "wpsa2026",
