@@ -207,196 +207,22 @@ const SOCIALS = [
 ];
 
 /* ═════════════════════════════════
-   STORAGE HELPERS
+   STORAGE  ←  now delegates to DB
+   (DB uses Firebase when configured,
+    localStorage as fallback otherwise)
    ═════════════════════════════════ */
 
-function getRegs()      { return JSON.parse(localStorage.getItem('wpsa_regs')     || '[]'); }
-function saveRegs(r)    { localStorage.setItem('wpsa_regs', JSON.stringify(r)); }
-function getSettings()  { return JSON.parse(localStorage.getItem('wpsa_settings') || 'null') || defaultSettings(); }
-function saveSettings(s){ localStorage.setItem('wpsa_settings', JSON.stringify(s)); }
-
-/* ═════════════════════════════════
-   AUTH SYSTEM
-   ═════════════════════════════════ */
-
-function getUsers()     { return JSON.parse(localStorage.getItem('wpsa_users') || '[]'); }
-function saveUsers(u)   { localStorage.setItem('wpsa_users', JSON.stringify(u)); }
-function getSession()   { return JSON.parse(sessionStorage.getItem('wpsa_session') || 'null'); }
-function setSession(u)  { sessionStorage.setItem('wpsa_session', JSON.stringify(u)); }
-function clearSession() { sessionStorage.removeItem('wpsa_session'); }
-
-function addLoginLog(email, type, status) {
-  const logs = JSON.parse(localStorage.getItem('wpsa_login_logs') || '[]');
-  logs.unshift({ email, type, status, timestamp: new Date().toISOString() });
-  if (logs.length > 500) logs.splice(500);
-  localStorage.setItem('wpsa_login_logs', JSON.stringify(logs));
-}
-
-let authCallback = null;
-
-function requireAuth(cb) {
-  const session = getSession();
-  if (session) { cb(session); return; }
-  authCallback = cb;
-  openAuthModal('login');
-}
-
-function openAuthModal(mode) {
-  setAuthMode(mode || 'login');
-  document.getElementById('auth-modal').classList.add('open');
-}
-
-function closeAuthModal() {
-  document.getElementById('auth-modal').classList.remove('open');
-  authCallback = null;
-}
-
-function setAuthMode(mode) {
-  const isLogin = mode === 'login';
-  document.getElementById('auth-modal').dataset.mode = mode;
-  document.getElementById('auth-modal-title').textContent = isLogin ? 'Sign In to Continue' : 'Create Account';
-  document.getElementById('auth-modal-sub').textContent   = isLogin
-    ? 'Log in to access your registration or apply for WPSA 2026.'
-    : 'Create a free account to register for WPSA 2026.';
-  document.getElementById('auth-name-row').style.display  = isLogin ? 'none' : 'grid';
-  document.getElementById('auth-submit-btn').textContent  = isLogin ? 'Sign In →' : 'Create Account →';
-  document.getElementById('auth-toggle-text').innerHTML   = isLogin
-    ? 'New here? <button class="auth-toggle-link" id="auth-switch-reg">Create a free account</button>'
-    : 'Already have an account? <button class="auth-toggle-link" id="auth-switch-reg">Sign in</button>';
-  document.getElementById('auth-err').style.display = 'none';
-  document.getElementById('auth-switch-reg')?.addEventListener('click', () => setAuthMode(isLogin ? 'register' : 'login'));
-}
-
-function handleAuthSubmit() {
-  const mode  = document.getElementById('auth-modal').dataset.mode;
-  const email = document.getElementById('auth-email').value.trim().toLowerCase();
-  const pass  = document.getElementById('auth-pass').value;
-  const err   = document.getElementById('auth-err');
-
-  if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    err.textContent = 'Please enter a valid email address.';
-    err.style.display = 'block'; return;
-  }
-  if (!pass || pass.length < 6) {
-    err.textContent = 'Password must be at least 6 characters.';
-    err.style.display = 'block'; return;
-  }
-
-  const users = getUsers();
-
-  if (mode === 'register') {
-    const fname = document.getElementById('auth-fname').value.trim();
-    const lname = document.getElementById('auth-lname').value.trim();
-    if (!fname || !lname) {
-      err.textContent = 'Please enter your first and last name.';
-      err.style.display = 'block'; return;
-    }
-    if (users.find(u => u.email === email)) {
-      err.textContent = 'An account with this email already exists. Please sign in.';
-      err.style.display = 'block'; return;
-    }
-    users.push({ email, pass, firstname: fname, lastname: lname, createdAt: new Date().toISOString() });
-    saveUsers(users);
-    addLoginLog(email, 'user', 'success');
-    const session = { email, firstname: fname, lastname: lname };
-    setSession(session);
-    updateNavAuth(session);
-    closeAuthModal();
-    if (authCallback) { const cb = authCallback; authCallback = null; cb(session); }
-
-  } else {
-    const user = users.find(u => u.email === email && u.pass === pass);
-    if (!user) {
-      addLoginLog(email, 'user', 'failed');
-      err.textContent = 'Incorrect email or password. Please try again.';
-      err.style.display = 'block'; return;
-    }
-    addLoginLog(email, 'user', 'success');
-    const session = { email: user.email, firstname: user.firstname, lastname: user.lastname };
-    setSession(session);
-    updateNavAuth(session);
-    closeAuthModal();
-    if (authCallback) { const cb = authCallback; authCallback = null; cb(session); }
-  }
-}
-
-function updateNavAuth(session) {
-  const btn = document.getElementById('nav-auth-btn');
-  if (!btn) return;
-  if (session) {
-    btn.textContent = session.firstname + ' ▾';
-    btn.classList.add('nav-auth-logged');
-  } else {
-    btn.textContent = 'Sign In';
-    btn.classList.remove('nav-auth-logged');
-  }
-}
-
-function handleNavAuth() {
-  const session = getSession();
-  if (session) {
-    if (confirm(`Signed in as ${session.email}\n\nSign out?`)) {
-      clearSession();
-      updateNavAuth(null);
-    }
-  } else {
-    openAuthModal('login');
-  }
-}
-
-/* Restore previous registration state for a returning authenticated user */
-function restoreRegSession(session) {
-  const regs = getRegs();
-  const existing = regs.find(r => r.email === session.email && r.status === 'confirmed');
-  if (!existing) {
-    /* Pre-fill form fields from session */
-    const fn = document.getElementById('f-fn');
-    const ln = document.getElementById('f-ln');
-    const em = document.getElementById('f-em');
-    if (fn && !fn.value) fn.value = session.firstname || '';
-    if (ln && !ln.value) ln.value = session.lastname  || '';
-    if (em && !em.value) em.value = session.email      || '';
-    return;
-  }
-  /* Show receipt + pitch panel for the existing registration */
-  currentReg = existing;
-  pitchFiles = (existing.pitchFiles || []).map(name => ({ name, size: 0, restored: true }));
-  document.getElementById('reg-form-wrap').style.display = 'none';
-  document.getElementById('reg-success').style.display   = 'block';
-  renderReceipt(existing);
-  document.getElementById('receipt-wrap').classList.add('show');
-  if (existing.ticket === 'startup') {
-    document.getElementById('pitch-panel').classList.add('show');
-    renderPitchFiles();
-  }
-}
-
-function defaultSettings() {
-  return {
-    sendAgenda:   true,
-    sendReceipt:  true,
-    pitchDeadline:'2026-05-15',
-    confirmSubject:'Your WPSA 2026 Registration is Confirmed! 🎉',
-    agendaText: `WPSA 2026 — Event Agenda\n${'─'.repeat(44)}\nDate   : Saturday, 23rd May 2026\nTime   : 09:30 AM – 06:00 PM IST\nVenue  : NSE, Bandra Kurla Complex, Mumbai\n${'─'.repeat(44)}\n\n09:30 AM  Registrations & Welcome Tea\n10:30 AM  Opening Ceremony & Lamp Lighting\n10:35 AM  Keynote Address\n11:00 AM  Fireside Chat\n11:30 AM  Awards Ceremony — Set 1\n12:15 PM  Empower Track 1\n12:15 PM  Panel Discussion 1\n01:00 PM  Power Lunch & Networking\n02:00 PM  Awards Ceremony — Set 2\n02:30 PM  Empower Track 2\n02:45 PM  Panel Discussion 2\n03:30 PM  PitchPower Startup Pitches\n05:00 PM  Awards Ceremony — Set 3\n05:30 PM  Vote of Thanks & Power Networking\n\n${'─'.repeat(44)}\nFor queries: connect@billenniumdivas.fund\n#WPSA2026 · #BreakFree · #BeThePower`,
-  };
-}
+/* These thin wrappers keep the rest of main.js unchanged */
+async function _getRegs()           { return DB.getRegs(); }
+async function _saveReg(reg)        { return DB.saveReg(reg); }
+async function _updateReg(id,patch) { return DB.updateReg(id, patch); }
+async function _addLog(entry)       { return DB.addLog(entry); }
 
 /* ═════════════════════════════════
    TAB NAVIGATION
    ═════════════════════════════════ */
 
 function showPage(id) {
-  if (id === 'register') {
-    requireAuth(session => {
-      _showPage('register');
-      restoreRegSession(session);
-    });
-    return;
-  }
-  _showPage(id);
-}
-
-function _showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
   document.getElementById('page-' + id)?.classList.add('active');
@@ -725,7 +551,7 @@ function processPayment() {
    FINALISE → RECEIPT
    ═════════════════════════════════ */
 
-function finaliseReg() {
+async function finaliseReg() {
   closePayModal();
   const reg = currentReg;
   reg.id        = 'WPSA26-' + Math.random().toString(36).slice(2,8).toUpperCase();
@@ -735,9 +561,18 @@ function finaliseReg() {
   reg.pitchFiles = [];
   reg.timestamp = new Date().toISOString();
 
-  const regs = getRegs();
-  regs.push(reg);
-  saveRegs(regs);
+  /* ── Save to Firebase (or localStorage fallback) ── */
+  try {
+    await DB.saveReg(reg);
+    await DB.addLog({
+      email:  reg.email,
+      action: 'registration_complete',
+      status: 'success',
+      note:   `${reg.id} · ${reg.ticket} · ₹${reg.amount.toLocaleString('en-IN')}`,
+    });
+  } catch (e) {
+    console.error('[DB] Save reg failed:', e);
+  }
 
   /* Show success + receipt */
   document.getElementById('reg-form-wrap').style.display = 'none';
@@ -860,7 +695,7 @@ function initPitchUpload() {
   input.addEventListener('change', () => addFiles([...input.files]));
 }
 
-function addFiles(files) {
+async function addFiles(files) {
   files.forEach(f => {
     const ext = '.' + f.name.split('.').pop().toLowerCase();
     if (!PITCH_TYPES.includes(ext)) { alert(`"${ext}" not allowed. Accepted: ${PITCH_TYPES.join(', ')}`); return; }
@@ -869,11 +704,12 @@ function addFiles(files) {
     pitchFiles.push(f);
   });
   renderPitchFiles();
-  /* Update stored record */
+  /* Update registration record in DB */
   if (currentReg) {
-    const regs = getRegs();
-    const idx = regs.findIndex(r => r.id === currentReg.id);
-    if (idx >= 0) { regs[idx].pitchFiles = pitchFiles.map(f => f.name); saveRegs(regs); }
+    try {
+      await DB.updateReg(currentReg.id, { pitchFiles: pitchFiles.map(f => f.name) });
+      await DB.addLog({ email: currentReg.email, action: 'pitch_upload', status: 'success', note: `${pitchFiles.length} file(s) for ${currentReg.id}` });
+    } catch (e) { console.error('[DB] Pitch update failed:', e); }
   }
 }
 
@@ -922,17 +758,6 @@ function initMobileNav() {
    ═════════════════════════════════ */
 
 document.addEventListener('DOMContentLoaded', () => {
-  /* Auth */
-  updateNavAuth(getSession());
-  document.getElementById('nav-auth-btn')?.addEventListener('click', handleNavAuth);
-  document.getElementById('auth-close')?.addEventListener('click', closeAuthModal);
-  document.getElementById('auth-submit-btn')?.addEventListener('click', handleAuthSubmit);
-  document.getElementById('auth-switch-reg')?.addEventListener('click', () => {
-    const mode = document.getElementById('auth-modal').dataset.mode;
-    setAuthMode(mode === 'login' ? 'register' : 'login');
-  });
-  document.getElementById('auth-pass')?.addEventListener('keydown', e => { if (e.key === 'Enter') handleAuthSubmit(); });
-
   /* Nav */
   document.querySelectorAll('.nav-link').forEach(l => l.addEventListener('click', () => showPage(l.dataset.page)));
   document.getElementById('nav-cta')?.addEventListener('click', () => showPage('register'));
