@@ -45,17 +45,16 @@ let _auth = null;
 
 function _init() {
   if (_db) return;
-  
+
   if (!_firebaseReady()) {
-    console.warn('[DB] Using localStorage fallback (Firebase not configured)');
+    console.warn('[DB] Firebase not configured → Using localStorage fallback');
     return;
   }
 
   try {
-    // Initialize Firebase if not already done
-    if (!firebase.apps.length) {
+    if (firebase.apps.length === 0) {
       firebase.initializeApp(FIREBASE_CONFIG);
-      console.log('%c✅ Firebase App Initialized Successfully', 'color:#4caf50;font-weight:bold');
+      console.log('%c✅ Firebase Initialized Successfully!', 'color:#4caf50; font-weight:bold; font-size:14px');
     }
 
     _db = firebase.firestore();
@@ -64,7 +63,7 @@ function _init() {
     console.log('%c✅ Firestore & Auth Ready', 'color:#4caf50');
 
   } catch (e) {
-    console.error('❌ Firebase Init Failed:', e);
+    console.error('❌ Firebase Initialization Failed:', e.message);
     _db = null;
   }
 }
