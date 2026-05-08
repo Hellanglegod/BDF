@@ -510,6 +510,11 @@ small { font-size: 0.8125rem; }
 .pay-spin { font-size: 3rem; animation: spin 1s linear infinite; display: block; margin-bottom: 16px; }
 @keyframes spin { to { transform: rotate(360deg); } }
 
+/* ── AUTH MODAL ── */
+.auth-toggle-link { background: none; border: none; color: var(--gold); font-size: inherit; cursor: pointer; text-decoration: underline; padding: 0; }
+.auth-toggle-link:hover { color: var(--gold-hi); }
+.nav-auth-logged { color: var(--gold) !important; border-color: var(--gold-md) !important; }
+
 /* ── RECEIPT ── */
 .receipt-wrap { display: none; }
 .receipt-wrap.show { display: block; }

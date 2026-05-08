@@ -12,10 +12,19 @@ const TICKET_LABELS = {
   startup:  'PitchPower',
 };
 
-function getRegs()      { return JSON.parse(localStorage.getItem('wpsa_regs')     || '[]'); }
-function saveRegs(r)    { localStorage.setItem('wpsa_regs', JSON.stringify(r)); }
-function getSettings()  { return JSON.parse(localStorage.getItem('wpsa_settings') || 'null') || defaultSettings(); }
-function saveSettings(s){ localStorage.setItem('wpsa_settings', JSON.stringify(s)); }
+function getRegs()        { return JSON.parse(localStorage.getItem('wpsa_regs')        || '[]'); }
+function saveRegs(r)      { localStorage.setItem('wpsa_regs', JSON.stringify(r)); }
+function getSettings()    { return JSON.parse(localStorage.getItem('wpsa_settings')    || 'null') || defaultSettings(); }
+function saveSettings(s)  { localStorage.setItem('wpsa_settings', JSON.stringify(s)); }
+function getLoginLogs()   { return JSON.parse(localStorage.getItem('wpsa_login_logs')  || '[]'); }
+function saveLoginLogs(l) { localStorage.setItem('wpsa_login_logs', JSON.stringify(l)); }
+
+function recordLoginEvent(email, type, status) {
+  const logs = getLoginLogs();
+  logs.unshift({ email, type, status, timestamp: new Date().toISOString() });
+  if (logs.length > 500) logs.splice(500);
+  saveLoginLogs(logs);
+}
 
 function defaultSettings() {
   return {
@@ -34,11 +43,13 @@ function tryLogin() {
   const pass = document.getElementById('login-pass').value;
   const err  = document.getElementById('login-err');
   if (pass === ADMIN_PASS) {
+    recordLoginEvent('admin', 'admin', 'success');
     adminLoggedIn = true;
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('admin-app').style.display = 'block';
     loadDashboard();
   } else {
+    recordLoginEvent('admin', 'admin', 'failed');
     err.textContent = 'Incorrect password. Please try again.';
     err.style.display = 'block';
     document.getElementById('login-pass').value = '';
@@ -55,6 +66,7 @@ function switchTab(tab) {
   if (tab === 'pitches')    renderPitchTable();
   if (tab === 'checkin')    resetCheckinSearch();
   if (tab === 'settings')   loadSettings();
+  if (tab === 'loginlogs')  renderLoginLogsTable();
 }
 
 /* ── DASHBOARD / STATS ── */
@@ -307,6 +319,44 @@ function renderPitchTable() {
   });
 }
 
+/* ── LOGIN LOGS ── */
+let logSearch = '';
+let logFilter = 'all';
+
+function renderLoginLogsTable() {
+  const tbody = document.getElementById('log-tbody');
+  if (!tbody) return;
+  let data = getLoginLogs();
+
+  if (logFilter === 'failed') {
+    data = data.filter(l => l.status === 'failed');
+  } else if (logFilter !== 'all') {
+    data = data.filter(l => l.type === logFilter);
+  }
+  if (logSearch) {
+    const q = logSearch.toLowerCase();
+    data = data.filter(l => (l.email || '').toLowerCase().includes(q));
+  }
+
+  tbody.innerHTML = '';
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:28px;color:var(--txt4);">No login events match your filter.</td></tr>`;
+    return;
+  }
+  data.forEach(log => {
+    const date = new Date(log.timestamp).toLocaleString('en-IN', {
+      day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit',
+    });
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td class="a-cell-sub">${date}</td>
+      <td class="a-cell-primary">${log.email}</td>
+      <td><span class="badge ${log.type === 'admin' ? 'badge-amber' : 'badge-gold'}">${log.type}</span></td>
+      <td><span class="badge ${log.status === 'success' ? 'badge-green' : 'badge-red'}">${log.status}</span></td>`;
+    tbody.appendChild(tr);
+  });
+}
+
 /* ── SETTINGS ── */
 function loadSettings() {
   const s = getSettings();
@@ -357,7 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
   /* Tabs */
   document.querySelectorAll('.atab').forEach(t => t.addEventListener('click', () => switchTab(t.dataset.tab)));
 
-  /* Search & filter */
+  /* Search & filter — registrations */
   document.getElementById('reg-search')?.addEventListener('input', e => { currentSearch = e.target.value; renderTable(); });
   document.getElementById('reg-filter')?.addEventListener('change', e => { currentFilter = e.target.value; renderTable(); });
 
@@ -370,4 +420,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* Settings */
   document.getElementById('save-settings')?.addEventListener('click', saveSettingsForm);
+
+  /* Login logs */
+  document.getElementById('log-search')?.addEventListener('input', e => { logSearch = e.target.value; renderLoginLogsTable(); });
+  document.getElementById('log-filter')?.addEventListener('change', e => { logFilter = e.target.value; renderLoginLogsTable(); });
+  document.getElementById('clear-logs-btn')?.addEventListener('click', () => {
+    if (!confirm('Clear all login logs? This cannot be undone.')) return;
+    saveLoginLogs([]);
+    renderLoginLogsTable();
+  });
 });
