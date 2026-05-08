@@ -34,10 +34,18 @@
 'use strict';
 
 function _firebaseReady() {
-  return typeof firebase !== 'undefined' &&
-         typeof FIREBASE_CONFIG !== 'undefined' &&
-         FIREBASE_CONFIG.apiKey !== 'YOUR_API_KEY' &&
-         FIREBASE_CONFIG.projectId !== 'YOUR_PROJECT_ID';
+  try {
+    return (
+      typeof firebase !== 'undefined' &&
+      typeof FIREBASE_CONFIG !== 'undefined' &&
+      typeof FIREBASE_CONFIG.apiKey === 'string' &&
+      FIREBASE_CONFIG.apiKey.length > 20 &&                    // Real apiKey is long
+      FIREBASE_CONFIG.projectId !== 'YOUR_PROJECT_ID' &&
+      FIREBASE_CONFIG.projectId !== ''
+    );
+  } catch (e) {
+    return false;
+  }
 }
 
 let _db = null;
@@ -47,23 +55,22 @@ function _init() {
   if (_db) return;
 
   if (!_firebaseReady()) {
-    console.warn('[DB] Firebase not configured → Using localStorage fallback');
+    console.warn('[DB] Firebase config not set → Using localStorage fallback');
     return;
   }
 
   try {
     if (firebase.apps.length === 0) {
       firebase.initializeApp(FIREBASE_CONFIG);
-      console.log('%c✅ Firebase Initialized Successfully!', 'color:#4caf50; font-weight:bold; font-size:14px');
+      console.log('%c✅ Firebase Initialized Successfully', 'color:#4caf50; font-weight:bold');
     }
 
     _db = firebase.firestore();
     _auth = firebase.auth();
 
     console.log('%c✅ Firestore & Auth Ready', 'color:#4caf50');
-
   } catch (e) {
-    console.error('❌ Firebase Initialization Failed:', e.message);
+    console.error('❌ Firebase Init Failed:', e.message);
     _db = null;
   }
 }
