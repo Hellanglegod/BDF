@@ -17,7 +17,8 @@ if (typeof DB !== 'undefined') {
 
 const ADMIN_EMAILS = [
   'admin@womenpowersummit.in',
-  'organiser@womenpowersummit.in'
+  'organiser@womenpowersummit.in',
+  'kothari.jihan@gmail.com'
 ];
 
 function isAdminUser(user) {
