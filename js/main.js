@@ -873,27 +873,49 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       if (!DB.auth) throw new Error('Firebase Auth not configured');
       const cred = await firebase.auth().signInWithEmailAndPassword(email, password);
-      const isAdmin = isAdminUser(cred.user);
-      await DB.addLog({
-        email,
-        action: 'login',
-        status: 'success',
-        note: 'User signed in'
-      });
+
+const user = cred.user;
+
+sessionStorage.setItem('wpsa_user_email', user.email || '');
+
+if (isAdminUser(user)) {
+  sessionStorage.setItem('wpsa_admin', 'true');
+} else {
+  sessionStorage.removeItem('wpsa_admin');
+}
+
+// Small auth sync delay
+await new Promise(r => setTimeout(r, 300));
+
+try {
+  await DB.addLog({
+    email,
+    action: isAdminUser(user) ? 'admin_login' : 'user_login',
+    status: 'success',
+    note: isAdminUser(user)
+      ? 'Admin signed in'
+      : 'User signed in',
+    adminOnly: true
+  });
+} catch (err) {
+  console.warn('Login log failed:', err);
+}
       closeAuth();
       // Resume to registration page
-      document.getElementById('page-register')?.classList.add('active');
-    } catch (e) {
+      showPage('register');    } catch (e) {
       showAuthErr(e?.message || 'Sign in failed. Please try again.');
       const emailFallback = (document.getElementById('auth-email')?.value || '').trim();
-      await DB.addLog({
-  email: emailFallback || 'unknown',
-  action: 'login_failed',
-  status: 'failed',
-  note: (e && e.code) ? e.code : 'error',
-  adminOnly: true,
-  timestamp: new Date().toISOString()
-});
+      try {
+  await DB.addLog({
+    email: emailFallback || 'unknown',
+    action: 'login_failed',
+    status: 'failed',
+    note: (e && e.code) ? e.code : 'error',
+    adminOnly: true
+  });
+} catch (err) {
+  console.warn('Failed login log failed:', err);
+}
     }
   };
 
@@ -904,7 +926,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const fname = (document.getElementById('auth-fname')?.value || '').trim();
     const lname = (document.getElementById('auth-lname')?.value || '').trim();
 
-    if (!email || !password || !fname || !lname) { showAuthErr('Please fill all required fields.'); return; }
+    if (!email || !password || !fname || !lname) { showAuthErr('Please fill all required fields.'); return; } 
 
     try {
       if (!DB.auth) throw new Error('Firebase Auth not configured');
@@ -921,30 +943,36 @@ document.addEventListener('DOMContentLoaded', async () => {
         createdAt: new Date().toISOString(),
       });
 
-      await DB.addLog({
-  email,
-  action: 'user_register',
-  status: 'success',
-  note: 'User registered',
-  adminOnly: true,
-  timestamp: new Date().toISOString()
-});
+      try {
+  await DB.addLog({
+    email,
+    action: 'user_register',
+    status: 'success',
+    note: 'User registered',
+    adminOnly: true
+  });
+} catch (err) {
+  console.warn('Signup log failed:', err);
+}
 
       // After signup, proceed to sign in session
       closeAuth();
-      document.getElementById('page-register')?.classList.add('active');
+      showPage('register');
     } catch (e) {
       showAuthErr(e?.message || 'Create account failed.');
-      await DB.addLog({
-  email: email || 'unknown',
-  action: 'register_failed',
-  status: 'failed',
-  note: (e && e.code) ? e.code : 'error',
-  adminOnly: true,
-  timestamp: new Date().toISOString()
-});
+      try {
+  await DB.addLog({
+    email: email || 'unknown',
+    action: 'register_failed',
+    status: 'failed',
+    note: (e && e.code) ? e.code : 'error',
+    adminOnly: true
+  });
+} catch (err) {
+  console.warn('Register failed log failed:', err);
+}
     }
-  };
+  }
 
   authSubmit?.addEventListener('click', async () => {
     const m = authMode();
@@ -1027,8 +1055,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   /* =========================
    AUTH STATE LISTENER
 ========================= */
+if (typeof firebase !== 'undefined' && firebase.auth) {
 
-firebase.auth().onAuthStateChanged((user) => {
+  firebase.auth().onAuthStateChanged((user) => {
 
   const signInBtn = document.querySelector('#sign-in-btn');
   const authModal = document.querySelector('#auth-modal');
@@ -1089,4 +1118,6 @@ sessionStorage.removeItem(
   }
 
 });
+
+}
 });
