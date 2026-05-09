@@ -34,6 +34,10 @@ function _isConfigured() {
   catch { return false; }
 }
 
+let _db = null;
+let _auth = null;
+let _firebaseInitTried = false;
+
 function _init() {
 
   if (_firebaseInitTried) return;
@@ -42,13 +46,13 @@ function _init() {
 
   try {
 
-    if (!_firebaseReady()) {
+    if (typeof firebase === "undefined") {
       console.error("Firebase SDK missing");
       return;
     }
 
     if (!window.FIREBASE_CONFIG) {
-      console.error("FIREBASE_CONFIG missing");
+      console.error("Firebase config missing");
       return;
     }
 
@@ -56,14 +60,12 @@ function _init() {
 
       firebase.initializeApp(window.FIREBASE_CONFIG);
 
-      console.log("Firebase app initialized");
+      console.log("Firebase initialized");
 
     }
 
     _db = firebase.firestore();
     _auth = firebase.auth();
-
-    console.log("Firebase services ready");
 
   } catch (err) {
 

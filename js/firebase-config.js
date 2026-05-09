@@ -10,7 +10,6 @@ const firebaseConfig = {
 
 const ADMIN_PASS = "JIHANCEO";
 
-window.FIREBASE_CONFIG = FIREBASE_CONFIG;
 window.ADMIN_PASS = ADMIN_PASS;
 
 console.log('%c✅ firebase-config.js loaded with real config', 'color:#4caf50;font-weight:bold');
