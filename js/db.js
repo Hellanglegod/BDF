@@ -172,3 +172,25 @@ const DB = {
 ========================= */
 
 _init();
+
+async function addLoginLog(email, type, status) {
+
+  try {
+
+    if (!firebase.apps.length) return;
+
+    const db = firebase.firestore();
+
+    await db.collection("loginLogs").add({
+      email: email || "Unknown",
+      type: type || "user",
+      status: status || "success",
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+  } catch (err) {
+    console.error("Failed to save login log:", err);
+  }
+}
+
+window.addLoginLog = addLoginLog;

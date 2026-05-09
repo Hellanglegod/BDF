@@ -3,13 +3,28 @@
    Registration · Payment · Receipt · Pitch Upload
    ═══════════════════════════════════════════════ */
 'use strict';
-
 /* =========================
    FORCE FIREBASE INIT
 ========================= */
 
 if (typeof DB !== 'undefined') {
   DB.isFirebase();
+}
+
+/* =========================
+   ADMIN ACCESS
+========================= */
+
+const ADMIN_EMAILS = [
+  'admin@womenpowersummit.in',
+  'organiser@womenpowersummit.in'
+];
+
+function isAdminUser(user) {
+  return !!user &&
+    ADMIN_EMAILS.includes(
+      (user.email || '').toLowerCase()
+    );
 }
 
 /* ═════════════════════════════════
@@ -836,35 +851,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Firebase Auth handlers
-  if (firebase.apps.length) {
-
-  firebase.auth().onAuthStateChanged((user) => {
-
-    const signInBtn = document.querySelector('#sign-in-btn');
-
-    if (user) {
-
-      console.log('Logged in:', user.email);
-
-      if (signInBtn) {
-        signInBtn.textContent = user.email;
+  let currentUser = null;
+  if (auth && typeof firebase !== 'undefined') {
+    firebase.auth().onAuthStateChanged((u) => {
+      currentUser = u;
+      // Persist UI state for pitch + receipt access
+      if (u?.email) {
+        sessionStorage.setItem('wpsa_user_email', u.email);
+      } else {
+        sessionStorage.removeItem('wpsa_user_email');
       }
-
-      document.body.classList.add('logged-in');
-
-    } else {
-
-      if (signInBtn) {
-        signInBtn.textContent = 'SIGN IN';
-      }
-
-      document.body.classList.remove('logged-in');
-
-    }
-
-  });
-
-}
+    });
+  }
 
   const signIn = async () => {
     clearAuthErr();
@@ -875,6 +873,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       if (!DB.auth) throw new Error('Firebase Auth not configured');
       const cred = await firebase.auth().signInWithEmailAndPassword(email, password);
+      const isAdmin = isAdminUser(cred.user);
       await DB.addLog({
         email,
         action: 'login',
@@ -888,11 +887,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       showAuthErr(e?.message || 'Sign in failed. Please try again.');
       const emailFallback = (document.getElementById('auth-email')?.value || '').trim();
       await DB.addLog({
-        email: emailFallback || 'unknown',
-        action: 'login',
-        status: 'failed',
-        note: (e && e.code) ? e.code : 'error'
-      });
+  email: emailFallback || 'unknown',
+  action: 'login_failed',
+  status: 'failed',
+  note: (e && e.code) ? e.code : 'error',
+  adminOnly: true,
+  timestamp: new Date().toISOString()
+});
     }
   };
 
@@ -921,11 +922,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       });
 
       await DB.addLog({
-        email,
-        action: 'register',
-        status: 'success',
-        note: 'User registered'
-      });
+  email,
+  action: 'user_register',
+  status: 'success',
+  note: 'User registered',
+  adminOnly: true,
+  timestamp: new Date().toISOString()
+});
 
       // After signup, proceed to sign in session
       closeAuth();
@@ -933,11 +936,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (e) {
       showAuthErr(e?.message || 'Create account failed.');
       await DB.addLog({
-        email: email || 'unknown',
-        action: 'register',
-        status: 'failed',
-        note: (e && e.code) ? e.code : 'error'
-      });
+  email: email || 'unknown',
+  action: 'register_failed',
+  status: 'failed',
+  note: (e && e.code) ? e.code : 'error',
+  adminOnly: true,
+  timestamp: new Date().toISOString()
+});
     }
   };
 
@@ -1025,69 +1030,61 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 firebase.auth().onAuthStateChanged((user) => {
 
-  const authBtn = document.getElementById('nav-auth-btn');
-
-  const userPanel = document.getElementById('user-panel');
-
-  const userEmail = document.getElementById('user-email');
-
-  const logoutBtn = document.getElementById('logout-btn');
+  const signInBtn = document.querySelector('#sign-in-btn');
+  const authModal = document.querySelector('#auth-modal');
 
   if (user) {
 
     console.log('Logged in:', user.email);
 
-    // Hide Sign In button
-    if (authBtn) {
-      authBtn.style.display = 'none';
+    // Close modal
+    if (authModal) {
+      authModal.classList.remove('open');
     }
 
-    // Show user panel
-    if (userPanel) {
-      userPanel.style.display = 'block';
+    // Update button text
+    if (signInBtn) {
+      signInBtn.textContent = user.email;
     }
 
-    // Show email
-    if (userEmail) {
-      userEmail.textContent = user.email;
-    }
+    // Add logged-in class
+    document.body.classList.add('logged-in');
+
+    sessionStorage.setItem(
+  'wpsa_user_email',
+  user.email || ''
+);
+
+if (isAdminUser(user)) {
+
+  sessionStorage.setItem(
+    'wpsa_admin',
+    'true'
+  );
+
+} else {
+
+  sessionStorage.removeItem(
+    'wpsa_admin'
+  );
+
+}
 
   } else {
 
     console.log('User signed out');
 
-    // Show Sign In button
-    if (authBtn) {
-      authBtn.style.display = 'inline-flex';
+    if (signInBtn) {
+      signInBtn.textContent = 'SIGN IN';
     }
 
-    // Hide user panel
-    if (userPanel) {
-      userPanel.style.display = 'none';
-    }
+    document.body.classList.remove('logged-in');
 
-  }
+    sessionStorage.removeItem('wpsa_admin');
 
-  // Logout functionality
-  if (logoutBtn) {
-
-    logoutBtn.onclick = async () => {
-
-      try {
-
-        await firebase.auth().signOut();
-
-        console.log('Logged out');
-
-        location.reload();
-
-      } catch (err) {
-
-        console.error('Logout failed:', err);
-
-      }
-
-    };
+sessionStorage.removeItem(
+  'wpsa_user_email'
+);
 
   }
 

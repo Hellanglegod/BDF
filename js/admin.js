@@ -4,6 +4,10 @@
    ═══════════════════════════════════════════════ */
 'use strict';
 
+const IS_ADMIN =
+  sessionStorage.getItem('wpsa_admin')
+  === 'true';
+
 const TICKET_LABELS = {
   award:    'Award Nomination',
   delegate: 'Delegate Pass',
@@ -341,6 +345,157 @@ async function renderPitchTable() {
   });
 }
 
+if (!IS_ADMIN) {
+
+  document.getElementById(
+    'log-tbody'
+  ).innerHTML = `
+    <tr>
+      <td colspan="4"
+        style="
+          text-align:center;
+          padding:28px;
+          color:#ff8080;
+        ">
+        Access Denied
+      </td>
+    </tr>
+  `;
+
+  return;
+}
+
+async function loadLogs() {
+
+  if (!IS_ADMIN) {
+
+    document.getElementById(
+      'log-tbody'
+    ).innerHTML = `
+      <tr>
+        <td colspan="4"
+          style="
+            text-align:center;
+            padding:28px;
+            color:#ff8080;
+          ">
+          Access Denied
+        </td>
+      </tr>
+    `;
+
+    return;
+  }
+
+  const tbody =
+    document.getElementById(
+      'log-tbody'
+    );
+
+  tbody.innerHTML = `
+    <tr>
+      <td colspan="4"
+        style="
+          text-align:center;
+          padding:28px;
+          color:var(--txt4);
+        ">
+        Loading logs...
+      </td>
+    </tr>
+  `;
+
+  try {
+
+    const snap = await db
+      .collection('logs')
+      .orderBy('timestamp', 'desc')
+      .limit(200)
+      .get();
+
+    if (snap.empty) {
+
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4"
+            style="
+              text-align:center;
+              padding:28px;
+              color:var(--txt4);
+            ">
+            No logs found.
+          </td>
+        </tr>
+      `;
+
+      return;
+    }
+
+    tbody.innerHTML = '';
+
+    snap.forEach(doc => {
+
+      const log = doc.data();
+
+      const tr =
+        document.createElement('tr');
+
+      tr.innerHTML = `
+        <td>
+          ${log.timestamp
+            ? new Date(
+                log.timestamp
+              ).toLocaleString('en-IN')
+            : '-'}
+        </td>
+
+        <td>
+          ${log.email || '-'}
+        </td>
+
+        <td>
+          ${log.action || '-'}
+        </td>
+
+        <td>
+          <span class="
+            badge
+            ${
+              log.status === 'success'
+              ? 'badge-green'
+              : 'badge-red'
+            }
+          ">
+            ${log.status || '-'}
+          </span>
+        </td>
+      `;
+
+      tbody.appendChild(tr);
+
+    });
+
+  } catch (err) {
+
+    console.error(err);
+
+    tbody.innerHTML = `
+      <tr>
+        <td colspan="4"
+          style="
+            text-align:center;
+            padding:28px;
+            color:#ff8080;
+          ">
+          Failed to load logs
+        </td>
+      </tr>
+    `;
+
+  }
+
+}
+
 /* ════════════════════════════════════════
    LOGIN LOGS
    ════════════════════════════════════════ */
@@ -531,3 +686,4 @@ document.addEventListener('DOMContentLoaded', () => {
   /* Settings */
   document.getElementById('save-settings')?.addEventListener('click', saveSettingsForm);
 });
+loadLogs();
