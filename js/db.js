@@ -40,23 +40,21 @@ function _init() {
 
   try {
 
+    console.log("CONFIG:", window.FIREBASE_CONFIG);
+
     if (typeof firebase === "undefined") {
       console.error("Firebase SDK missing");
       return;
     }
 
-    if (!window.FIREBASE_CONFIG) {
+    if (typeof window.FIREBASE_CONFIG === "undefined") {
       console.error("Firebase config missing");
       return;
     }
 
-    if (!firebase.apps.length) {
+    firebase.initializeApp(window.FIREBASE_CONFIG);
 
-      firebase.initializeApp(window.FIREBASE_CONFIG);
-
-      console.log("Firebase initialized");
-
-    }
+    console.log("Firebase initialized");
 
     _db = firebase.firestore();
     _auth = firebase.auth();

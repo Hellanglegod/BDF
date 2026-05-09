@@ -1,4 +1,4 @@
-const firebaseConfig = {
+window.firebaseConfig = {
   apiKey: "AIzaSyBGlJauNHYgTqWobGKrMi1Qn9vvGfKpDTI",
   authDomain: "wpsa2026.firebaseapp.com",
   projectId: "wpsa2026",
@@ -12,4 +12,5 @@ const ADMIN_PASS = "JIHANCEO";
 
 window.ADMIN_PASS = ADMIN_PASS;
 
-console.log('%c✅ firebase-config.js loaded with real config', 'color:#4caf50;font-weight:bold');
+console.log("✅ firebase-config.js loaded with real config");
+console.log(window.FIREBASE_CONFIG);
