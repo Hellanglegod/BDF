@@ -1025,35 +1025,69 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 firebase.auth().onAuthStateChanged((user) => {
 
-  const signInBtn = document.querySelector('#sign-in-btn');
-  const authModal = document.querySelector('#auth-modal');
+  const authBtn = document.getElementById('nav-auth-btn');
+
+  const userPanel = document.getElementById('user-panel');
+
+  const userEmail = document.getElementById('user-email');
+
+  const logoutBtn = document.getElementById('logout-btn');
 
   if (user) {
 
     console.log('Logged in:', user.email);
 
-    // Close modal
-    if (authModal) {
-      authModal.classList.remove('open');
+    // Hide Sign In button
+    if (authBtn) {
+      authBtn.style.display = 'none';
     }
 
-    // Update button text
-    if (signInBtn) {
-      signInBtn.textContent = user.email;
+    // Show user panel
+    if (userPanel) {
+      userPanel.style.display = 'block';
     }
 
-    // Add logged-in class
-    document.body.classList.add('logged-in');
+    // Show email
+    if (userEmail) {
+      userEmail.textContent = user.email;
+    }
 
   } else {
 
     console.log('User signed out');
 
-    if (signInBtn) {
-      signInBtn.textContent = 'SIGN IN';
+    // Show Sign In button
+    if (authBtn) {
+      authBtn.style.display = 'inline-flex';
     }
 
-    document.body.classList.remove('logged-in');
+    // Hide user panel
+    if (userPanel) {
+      userPanel.style.display = 'none';
+    }
+
+  }
+
+  // Logout functionality
+  if (logoutBtn) {
+
+    logoutBtn.onclick = async () => {
+
+      try {
+
+        await firebase.auth().signOut();
+
+        console.log('Logged out');
+
+        location.reload();
+
+      } catch (err) {
+
+        console.error('Logout failed:', err);
+
+      }
+
+    };
 
   }
 

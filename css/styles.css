@@ -595,3 +595,13 @@ small { font-size: 0.8125rem; }
   .cd-num { font-size: 2rem; }
   .pay-methods { grid-template-columns: repeat(3,1fr); }
 }
+
+#user-panel{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+}
+
+#logout-btn{
+  min-width:90px;
+}

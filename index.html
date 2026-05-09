@@ -30,11 +30,48 @@
       <button class="nav-link" data-page="register">Register</button>
     </div>
     <div class="nav-actions">
-      <button class="btn btn-ghost btn-sm" id="nav-auth-btn">Sign In</button>
-      <button class="btn btn-gold btn-sm" id="nav-cta">Apply Now</button>
-      <button class="nav-hamburger" id="nav-hamburger" aria-label="Menu">
-        <span></span><span></span><span></span>
-      </button>
+
+  <!-- SIGN IN BUTTON -->
+  <button class="btn btn-ghost btn-sm" id="nav-auth-btn">
+    Sign In
+  </button>
+
+  <!-- LOGGED IN USER PANEL -->
+  <div id="user-panel" style="display:none; margin-left:12px;">
+
+    <div id="user-email"
+      style="
+        font-size:12px;
+        color:var(--gold);
+        margin-bottom:6px;
+        max-width:220px;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        white-space:nowrap;
+      ">
+    </div>
+
+    <button
+      class="btn btn-outline btn-sm"
+      id="logout-btn">
+      Log Out
+    </button>
+
+  </div>
+
+  <!-- APPLY BUTTON -->
+  <button class="btn btn-gold btn-sm" id="nav-cta">
+    Apply Now
+  </button>
+
+  <!-- MOBILE MENU -->
+  <button class="nav-hamburger" id="nav-hamburger" aria-label="Menu">
+    <span></span>
+    <span></span>
+    <span></span>
+  </button>
+
+</div>
     </div>
   </div>
   <div class="nav-mobile-menu" id="nav-mobile-menu">
