@@ -4,6 +4,14 @@
    ═══════════════════════════════════════════════ */
 'use strict';
 
+/* =========================
+   FORCE FIREBASE INIT
+========================= */
+
+if (typeof DB !== 'undefined') {
+  DB.isFirebase();
+}
+
 /* ═════════════════════════════════
    DATA
    ═════════════════════════════════ */
@@ -828,18 +836,35 @@ document.addEventListener('DOMContentLoaded', async () => {
   });
 
   // Firebase Auth handlers
-  let currentUser = null;
-  if (auth && typeof firebase !== 'undefined') {
-    firebase.auth().onAuthStateChanged((u) => {
-      currentUser = u;
-      // Persist UI state for pitch + receipt access
-      if (u?.email) {
-        sessionStorage.setItem('wpsa_user_email', u.email);
-      } else {
-        sessionStorage.removeItem('wpsa_user_email');
+  if (firebase.apps.length) {
+
+  firebase.auth().onAuthStateChanged((user) => {
+
+    const signInBtn = document.querySelector('#sign-in-btn');
+
+    if (user) {
+
+      console.log('Logged in:', user.email);
+
+      if (signInBtn) {
+        signInBtn.textContent = user.email;
       }
-    });
-  }
+
+      document.body.classList.add('logged-in');
+
+    } else {
+
+      if (signInBtn) {
+        signInBtn.textContent = 'SIGN IN';
+      }
+
+      document.body.classList.remove('logged-in');
+
+    }
+
+  });
+
+}
 
   const signIn = async () => {
     clearAuthErr();

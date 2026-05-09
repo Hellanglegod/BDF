@@ -35,14 +35,42 @@ function _isConfigured() {
 }
 
 function _init() {
-  if (_done) return; _done=true;
-  if (!_isConfigured()) { console.warn('[DB] Firebase not configured — using localStorage'); return; }
+
+  if (_firebaseInitTried) return;
+
+  _firebaseInitTried = true;
+
   try {
-    if (!firebase.apps.length) firebase.initializeApp(FIREBASE_CONFIG); // FIX-1: uses FIREBASE_CONFIG
-    _db=firebase.firestore(); _auth=firebase.auth(); _ready=true;
-    _db.enablePersistence({synchronizeTabs:true}).catch(()=>{});
-    console.log('%c[DB] Firebase connected ✅','color:#4caf82;font-weight:bold');
-  } catch(e) { console.error('[DB] init failed, using localStorage:',e.message); _ready=false; }
+
+    if (!_firebaseReady()) {
+      console.error("Firebase SDK missing");
+      return;
+    }
+
+    if (!window.FIREBASE_CONFIG) {
+      console.error("FIREBASE_CONFIG missing");
+      return;
+    }
+
+    if (!firebase.apps.length) {
+
+      firebase.initializeApp(window.FIREBASE_CONFIG);
+
+      console.log("Firebase app initialized");
+
+    }
+
+    _db = firebase.firestore();
+    _auth = firebase.auth();
+
+    console.log("Firebase services ready");
+
+  } catch (err) {
+
+    console.error("Firebase init failed:", err);
+
+  }
+
 }
 
 const DB = {
