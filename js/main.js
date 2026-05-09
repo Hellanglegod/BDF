@@ -795,7 +795,15 @@ function initMobileNav() {
 document.addEventListener('DOMContentLoaded', async () => {
   // Auth/session gate
   const auth = DB.auth;
-  const authEmailEl = document.getElementById('auth-modal');
+
+  // Set Firebase auth persistence to NONE so user is logged out on tab refresh
+  if (auth && typeof firebase !== 'undefined') {
+    try {
+      await firebase.auth().setPersistence(firebase.auth.Auth.Persistence.NONE);
+    } catch (err) {
+      console.warn('Failed to set auth persistence:', err);
+    }
+  }
 
   // Ensure auth UI modal is wired
   const authModal = document.getElementById('auth-modal');
@@ -804,6 +812,34 @@ document.addEventListener('DOMContentLoaded', async () => {
   const authSubmit = document.getElementById('auth-submit-btn');
   const authSwitchReg = document.getElementById('auth-switch-reg');
   const authMode = () => authModal?.dataset?.mode === 'register' ? 'register' : 'login';
+
+  /* UI elements for logged-in indicator */
+  const navAuthBtn = document.getElementById('nav-auth-btn');
+  const userPanel  = document.getElementById('user-panel');
+  const userEmailEl = document.getElementById('user-email');
+  const logoutBtn  = document.getElementById('logout-btn');
+
+  function updateAuthUI(user) {
+    if (user) {
+      if (navAuthBtn) navAuthBtn.style.display = 'none';
+      if (userPanel) userPanel.style.display = 'flex';
+      if (userEmailEl) userEmailEl.textContent = user.email || '';
+      document.body.classList.add('logged-in');
+      sessionStorage.setItem('wpsa_user_email', user.email || '');
+      if (isAdminUser(user)) {
+        sessionStorage.setItem('wpsa_admin', 'true');
+      } else {
+        sessionStorage.removeItem('wpsa_admin');
+      }
+    } else {
+      if (navAuthBtn) { navAuthBtn.style.display = ''; navAuthBtn.textContent = 'Sign In'; }
+      if (userPanel) userPanel.style.display = 'none';
+      if (userEmailEl) userEmailEl.textContent = '';
+      document.body.classList.remove('logged-in');
+      sessionStorage.removeItem('wpsa_user_email');
+      sessionStorage.removeItem('wpsa_admin');
+    }
+  }
 
   const showAuthErr = (msg) => {
     if (!authErr) return;
@@ -823,12 +859,22 @@ document.addEventListener('DOMContentLoaded', async () => {
     const title = document.getElementById('auth-modal-title');
     const sub = document.getElementById('auth-modal-sub');
     const nameRow = document.getElementById('auth-name-row');
+    const toggleText = document.getElementById('auth-toggle-text');
     if (title) title.textContent = m === 'register' ? 'Create your free account' : 'Sign In to Continue';
     if (sub) sub.textContent = m === 'register'
       ? 'Create an account to access registration, receipt download, and PitchPower uploads.'
       : 'Log in to access your registration or apply for WPSA 2026.';
     if (nameRow) nameRow.style.display = m === 'register' ? 'grid' : 'none';
     if (authSubmit) authSubmit.textContent = m === 'register' ? 'Create account →' : 'Sign In →';
+    if (toggleText) {
+      toggleText.innerHTML = m === 'register'
+        ? 'Already have an account? <button class="auth-toggle-link" id="auth-switch-reg">Sign in</button>'
+        : 'New here? <button class="auth-toggle-link" id="auth-switch-reg">Create a free account</button>';
+      document.getElementById('auth-switch-reg')?.addEventListener('click', () => {
+        setAuthMode(m === 'register' ? 'login' : 'register');
+      });
+    }
+    clearAuthErr();
   };
 
   const openAuth = (m = 'login') => {
@@ -851,19 +897,29 @@ document.addEventListener('DOMContentLoaded', async () => {
     setAuthMode(m === 'login' ? 'register' : 'login');
   });
 
-  // Firebase Auth handlers
+  // Firebase Auth state listener
   let currentUser = null;
   if (auth && typeof firebase !== 'undefined') {
     firebase.auth().onAuthStateChanged((u) => {
       currentUser = u;
-      // Persist UI state for pitch + receipt access
-      if (u?.email) {
-        sessionStorage.setItem('wpsa_user_email', u.email);
-      } else {
-        sessionStorage.removeItem('wpsa_user_email');
-      }
+      updateAuthUI(u);
     });
   }
+
+  /* Logout button handler */
+  logoutBtn?.addEventListener('click', async () => {
+    try {
+      if (typeof firebase !== 'undefined' && firebase.auth) {
+        await firebase.auth().signOut();
+      }
+      sessionStorage.removeItem('wpsa_user_email');
+      sessionStorage.removeItem('wpsa_admin');
+      updateAuthUI(null);
+      showPage('home');
+    } catch (err) {
+      console.error('Logout failed:', err);
+    }
+  });
 
   const signIn = async () => {
     clearAuthErr();
@@ -874,49 +930,36 @@ document.addEventListener('DOMContentLoaded', async () => {
     try {
       if (!DB.auth) throw new Error('Firebase Auth not configured');
       const cred = await firebase.auth().signInWithEmailAndPassword(email, password);
+      const user = cred.user;
+      updateAuthUI(user);
 
-const user = cred.user;
-
-sessionStorage.setItem('wpsa_user_email', user.email || '');
-
-if (isAdminUser(user)) {
-  sessionStorage.setItem('wpsa_admin', 'true');
-} else {
-  sessionStorage.removeItem('wpsa_admin');
-}
-
-// Small auth sync delay
-await new Promise(r => setTimeout(r, 300));
-
-try {
-  await DB.addLog({
-    email,
-    action: isAdminUser(user) ? 'admin_login' : 'user_login',
-    status: 'success',
-    note: isAdminUser(user)
-      ? 'Admin signed in'
-      : 'User signed in',
-    adminOnly: true
-  });
-} catch (err) {
-  console.warn('Login log failed:', err);
-}
+      try {
+        await DB.addLog({
+          email,
+          action: isAdminUser(user) ? 'admin_login' : 'user_login',
+          status: 'success',
+          note: isAdminUser(user) ? 'Admin signed in' : 'User signed in',
+          adminOnly: true
+        });
+      } catch (err) {
+        console.warn('Login log failed:', err);
+      }
       closeAuth();
-      // Resume to registration page
-      showPage('register');    } catch (e) {
+      showPage('register');
+    } catch (e) {
       showAuthErr(e?.message || 'Sign in failed. Please try again.');
       const emailFallback = (document.getElementById('auth-email')?.value || '').trim();
       try {
-  await DB.addLog({
-    email: emailFallback || 'unknown',
-    action: 'login_failed',
-    status: 'failed',
-    note: (e && e.code) ? e.code : 'error',
-    adminOnly: true
-  });
-} catch (err) {
-  console.warn('Failed login log failed:', err);
-}
+        await DB.addLog({
+          email: emailFallback || 'unknown',
+          action: 'login_failed',
+          status: 'failed',
+          note: (e && e.code) ? e.code : 'error',
+          adminOnly: true
+        });
+      } catch (err) {
+        console.warn('Failed login log failed:', err);
+      }
     }
   };
 
@@ -927,14 +970,14 @@ try {
     const fname = (document.getElementById('auth-fname')?.value || '').trim();
     const lname = (document.getElementById('auth-lname')?.value || '').trim();
 
-    if (!email || !password || !fname || !lname) { showAuthErr('Please fill all required fields.'); return; } 
+    if (!email || !password || !fname || !lname) { showAuthErr('Please fill all required fields.'); return; }
 
     try {
       if (!DB.auth) throw new Error('Firebase Auth not configured');
       const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
       const u = cred.user;
+      updateAuthUI(u);
 
-      // Save user profile mirror into DB
       await DB.saveUser({
         uid: u.uid,
         email: u.email,
@@ -945,35 +988,34 @@ try {
       });
 
       try {
-  await DB.addLog({
-    email,
-    action: 'user_register',
-    status: 'success',
-    note: 'User registered',
-    adminOnly: true
-  });
-} catch (err) {
-  console.warn('Signup log failed:', err);
-}
+        await DB.addLog({
+          email,
+          action: 'user_register',
+          status: 'success',
+          note: 'User registered',
+          adminOnly: true
+        });
+      } catch (err) {
+        console.warn('Signup log failed:', err);
+      }
 
-      // After signup, proceed to sign in session
       closeAuth();
       showPage('register');
     } catch (e) {
       showAuthErr(e?.message || 'Create account failed.');
       try {
-  await DB.addLog({
-    email: email || 'unknown',
-    action: 'register_failed',
-    status: 'failed',
-    note: (e && e.code) ? e.code : 'error',
-    adminOnly: true
-  });
-} catch (err) {
-  console.warn('Register failed log failed:', err);
-}
+        await DB.addLog({
+          email: email || 'unknown',
+          action: 'register_failed',
+          status: 'failed',
+          note: (e && e.code) ? e.code : 'error',
+          adminOnly: true
+        });
+      } catch (err) {
+        console.warn('Register failed log failed:', err);
+      }
     }
-  }
+  };
 
   authSubmit?.addEventListener('click', async () => {
     const m = authMode();
@@ -998,23 +1040,28 @@ try {
     if (!isAuthed) { setPendingTarget('register'); openAuth('login'); return; }
     showPage('register');
   });
-  
+
   document.getElementById('nav-auth-btn')?.addEventListener('click', () => {
-    const isAuthed = !!(sessionStorage.getItem('wpsa_user_email') || firebase?.auth?.()?.currentUser);
-    if (!isAuthed) { setPendingTarget('register'); openAuth('login'); return; }
-    showPage('register');
+    openAuth('login');
   });
 
   initMobileNav();
 
-
   /* Hero buttons */
-  document.getElementById('hero-apply')?.addEventListener('click', () => showPage('register'));
+  document.getElementById('hero-apply')?.addEventListener('click', () => {
+    const isAuthed = !!(sessionStorage.getItem('wpsa_user_email') || firebase?.auth?.()?.currentUser);
+    if (!isAuthed) { setPendingTarget('register'); openAuth('login'); return; }
+    showPage('register');
+  });
   document.getElementById('hero-schedule')?.addEventListener('click', () => {
     showPage('home');
     setTimeout(() => document.getElementById('schedule')?.scrollIntoView({ behavior:'smooth', block:'start' }), 120);
   });
-  document.getElementById('pricing-apply')?.addEventListener('click', () => showPage('register'));
+  document.getElementById('pricing-apply')?.addEventListener('click', () => {
+    const isAuthed = !!(sessionStorage.getItem('wpsa_user_email') || firebase?.auth?.()?.currentUser);
+    if (!isAuthed) { setPendingTarget('register'); openAuth('login'); return; }
+    showPage('register');
+  });
 
   /* Award filter (home) */
   document.querySelectorAll('.filter-btn').forEach(btn => {
@@ -1052,73 +1099,4 @@ try {
   document.getElementById('rcpt-dl')?.addEventListener('click', downloadReceiptTxt);
 
   showPage('home');
-
-  /* =========================
-   AUTH STATE LISTENER
-========================= */
-if (typeof firebase !== 'undefined' && firebase.auth) {
-
-  firebase.auth().onAuthStateChanged((user) => {
-
-  const signInBtn = document.querySelector('#sign-in-btn');
-  const authModal = document.querySelector('#auth-modal');
-
-  if (user) {
-
-    console.log('Logged in:', user.email);
-
-    // Close modal
-    if (authModal) {
-      authModal.classList.remove('open');
-    }
-
-    // Update button text
-    if (signInBtn) {
-      signInBtn.textContent = user.email;
-    }
-
-    // Add logged-in class
-    document.body.classList.add('logged-in');
-
-    sessionStorage.setItem(
-  'wpsa_user_email',
-  user.email || ''
-);
-
-if (isAdminUser(user)) {
-
-  sessionStorage.setItem(
-    'wpsa_admin',
-    'true'
-  );
-
-} else {
-
-  sessionStorage.removeItem(
-    'wpsa_admin'
-  );
-
-}
-
-  } else {
-
-    console.log('User signed out');
-
-    if (signInBtn) {
-      signInBtn.textContent = 'SIGN IN';
-    }
-
-    document.body.classList.remove('logged-in');
-
-    sessionStorage.removeItem('wpsa_admin');
-
-sessionStorage.removeItem(
-  'wpsa_user_email'
-);
-
-  }
-
-});
-
-}
 });

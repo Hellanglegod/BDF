@@ -4,10 +4,6 @@
    ═══════════════════════════════════════════════ */
 'use strict';
 
-const IS_ADMIN =
-  sessionStorage.getItem('wpsa_admin')
-  === 'true';
-
 const TICKET_LABELS = {
   award:    'Award Nomination',
   delegate: 'Delegate Pass',
@@ -46,7 +42,7 @@ function switchTab(tab) {
 
   if (tab === 'registrations') renderTable();
   if (tab === 'pitches')       renderPitchTable();
-  if (tab === 'login-logs')    renderLoginLogs();
+  if (tab === 'loginlogs')     renderLoginLogs();
   if (tab === 'users')         renderUsersTable();
   if (tab === 'settings')      loadSettings();
 }
@@ -74,8 +70,6 @@ async function loadDashboard() {
   _set('st-award',    regs.filter(r => r.ticket === 'award').length);
   _set('st-delegate', regs.filter(r => r.ticket === 'delegate').length);
   _set('st-startup',  regs.filter(r => r.ticket === 'startup').length);
-  _set('st-users',    users.length);
-  _set('st-logins',   logs.filter(l => l.action === 'login' && l.status === 'success').length);
 
   /* Show backend status */
   const status = DB.status();
@@ -345,226 +339,88 @@ async function renderPitchTable() {
   });
 }
 
-if (!IS_ADMIN) {
-
-  document.getElementById(
-    'log-tbody'
-  ).innerHTML = `
-    <tr>
-      <td colspan="4"
-        style="
-          text-align:center;
-          padding:28px;
-          color:#ff8080;
-        ">
-        Access Denied
-      </td>
-    </tr>
-  `;
-
-  return;
-}
-
-async function loadLogs() {
-
-  if (!IS_ADMIN) {
-
-    document.getElementById(
-      'log-tbody'
-    ).innerHTML = `
-      <tr>
-        <td colspan="4"
-          style="
-            text-align:center;
-            padding:28px;
-            color:#ff8080;
-          ">
-          Access Denied
-        </td>
-      </tr>
-    `;
-
-    return;
-  }
-
-  const tbody =
-    document.getElementById(
-      'log-tbody'
-    );
-
-  tbody.innerHTML = `
-    <tr>
-      <td colspan="4"
-        style="
-          text-align:center;
-          padding:28px;
-          color:var(--txt4);
-        ">
-        Loading logs...
-      </td>
-    </tr>
-  `;
-
-  try {
-
-    const snap = await db
-      .collection('logs')
-      .orderBy('timestamp', 'desc')
-      .limit(200)
-      .get();
-
-    if (snap.empty) {
-
-      tbody.innerHTML = `
-        <tr>
-          <td colspan="4"
-            style="
-              text-align:center;
-              padding:28px;
-              color:var(--txt4);
-            ">
-            No logs found.
-          </td>
-        </tr>
-      `;
-
-      return;
-    }
-
-    tbody.innerHTML = '';
-
-    snap.forEach(doc => {
-
-      const log = doc.data();
-
-      const tr =
-        document.createElement('tr');
-
-      tr.innerHTML = `
-        <td>
-          ${log.timestamp
-            ? new Date(
-                log.timestamp
-              ).toLocaleString('en-IN')
-            : '-'}
-        </td>
-
-        <td>
-          ${log.email || '-'}
-        </td>
-
-        <td>
-          ${log.action || '-'}
-        </td>
-
-        <td>
-          <span class="
-            badge
-            ${
-              log.status === 'success'
-              ? 'badge-green'
-              : 'badge-red'
-            }
-          ">
-            ${log.status || '-'}
-          </span>
-        </td>
-      `;
-
-      tbody.appendChild(tr);
-
-    });
-
-  } catch (err) {
-
-    console.error(err);
-
-    tbody.innerHTML = `
-      <tr>
-        <td colspan="4"
-          style="
-            text-align:center;
-            padding:28px;
-            color:#ff8080;
-          ">
-          Failed to load logs
-        </td>
-      </tr>
-    `;
-
-  }
-
-}
-
 /* ════════════════════════════════════════
-   LOGIN LOGS
+   LOGIN LOGS (from Firebase)
    ════════════════════════════════════════ */
 let logFilter = 'all';
 let logSearch  = '';
 
 async function renderLoginLogs() {
-  const container = document.getElementById('log-container');
-  if (!container) return;
+  const tbody = document.getElementById('log-tbody');
+  if (!tbody) return;
 
-  let logs = await DB.getLogs();
+  tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:28px;color:var(--txt4);">Loading logs from Firebase...</td></tr>`;
 
-  /* Update log stats */
-  _set('log-total',       logs.length);
-  _set('log-logins-ok',   logs.filter(l=>l.action==='login'&&l.status==='success').length);
-  _set('log-logins-fail', logs.filter(l=>l.action==='login'&&l.status==='failed').length);
-  _set('log-registers',   logs.filter(l=>l.action==='register').length);
-  _set('log-reg-complete',logs.filter(l=>l.action==='registration_complete').length);
-  _set('log-downloads',   logs.filter(l=>l.action==='download_ticket').length);
-  _set('log-pitches',     logs.filter(l=>l.action==='pitch_upload').length);
+  let logs = [];
+  try {
+    logs = await DB.getLogs();
+  } catch (err) {
+    console.error("Failed to load logs:", err);
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:28px;color:#ff8080;">Failed to load logs from Firebase.</td></tr>`;
+    return;
+  }
 
   /* Apply filters */
-  if (logFilter !== 'all') logs = logs.filter(l => l.action === logFilter || l.status === logFilter);
+  if (logFilter === 'user') {
+    logs = logs.filter(l =>
+      (l.action || '').includes('user') ||
+      ((l.action || '') === 'login' && (l.status || '') === 'success')
+    );
+  } else if (logFilter === 'admin') {
+    logs = logs.filter(l => (l.action || '').includes('admin'));
+  } else if (logFilter === 'failed') {
+    logs = logs.filter(l => (l.status || '') === 'failed');
+  }
+
   if (logSearch) {
     const q = logSearch.toLowerCase();
-    logs = logs.filter(l => (l.email||'').toLowerCase().includes(q) || (l.note||'').toLowerCase().includes(q));
+    logs = logs.filter(l =>
+      (l.email || '').toLowerCase().includes(q) ||
+      (l.note || '').toLowerCase().includes(q)
+    );
   }
 
   if (!logs.length) {
-    container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--txt4);">No activity logged yet. Events appear as soon as users interact with the site.</div>`;
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center;padding:28px;color:var(--txt4);">No login events found.</td></tr>`;
     return;
   }
 
   const ACTION_ICON = {
-    login: '🔑', logout: '↩', register: '✨',
-    registration_complete: '🎫', download_ticket: '⬇',
-    pitch_upload: '📤', print_ticket: '🖨',
+    user_login: '🔑', admin_login: '🔐', login: '🔑',
+    login_failed: '❌', logout: '↩', user_register: '✨',
+    register_failed: '❌', registration_complete: '🎫',
+    download_ticket: '⬇', pitch_upload: '📤', print_ticket: '🖨',
     password_reset_request: '🔒',
   };
 
-  container.innerHTML = `
-    <div class="log-shell">
-      <div class="log-entry log-header">
-        <span>Timestamp</span><span>Email</span><span>Action</span><span>Status</span><span>Note</span>
-      </div>
-      ${logs.map(l => {
-        const cls  = l.status === 'success' ? 'badge-green' : l.status === 'failed' ? 'badge-red' : 'badge-amber';
-        const icon = ACTION_ICON[l.action] || '•';
-        const dt   = new Date(l.timestamp);
-        const ds   = dt.toLocaleDateString('en-IN', { day:'2-digit', month:'short' });
-        const ts   = dt.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
-        return `
-          <div class="log-entry">
-            <span class="log-time">${ds} ${ts}</span>
-            <span class="log-email">${l.email || '—'}</span>
-            <span class="log-action">${icon} ${(l.action||'').replace(/_/g,' ')}</span>
-            <span><span class="badge ${cls}">${l.status}</span></span>
-            <span class="log-note">${l.note || '—'}</span>
-          </div>`;
-      }).join('')}
-    </div>`;
+  tbody.innerHTML = '';
+  logs.forEach(l => {
+    const icon = ACTION_ICON[l.action] || '•';
+    const dt   = new Date(l.timestamp);
+    const ds   = dt.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' });
+    const ts   = dt.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+    const cls  = l.status === 'success' ? 'badge-green' : l.status === 'failed' ? 'badge-red' : 'badge-amber';
+    const actionLabel = (l.action || '-').replace(/_/g, ' ');
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <div class="a-cell-primary">${ds}</div>
+        <div class="a-cell-sub">${ts}</div>
+      </td>
+      <td>${l.email || '—'}</td>
+      <td>${icon} ${actionLabel}${l.note ? `<div class="a-cell-sub">${l.note}</div>` : ''}</td>
+      <td><span class="badge ${cls}">${l.status || '—'}</span></td>`;
+    tbody.appendChild(tr);
+  });
 }
 
 async function exportLogs() {
   const logs = await DB.getLogs();
-  const headers = ['Timestamp','Email','Action','Status','Note','User Agent'];
+  const headers = ['Timestamp','Email','Action','Status','Note'];
   const rows    = logs.map(l => [
     l.timestamp, l.email, l.action, l.status,
-    `"${l.note||''}"`, `"${(l.userAgent||'').replace(/"/g,"'")}"`,
+    `"${l.note||''}"`,
   ]);
   const csv = [headers, ...rows].map(r => r.join(',')).join('\n');
   const a   = document.createElement('a');
@@ -686,4 +542,3 @@ document.addEventListener('DOMContentLoaded', () => {
   /* Settings */
   document.getElementById('save-settings')?.addEventListener('click', saveSettingsForm);
 });
-loadLogs();

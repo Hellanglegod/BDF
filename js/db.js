@@ -84,84 +84,150 @@ const DB = {
     return _auth;
   },
 
-  async saveUser(user) {
-
+  status() {
     _init();
-
-    if (_db) {
-
-      await _db
-        .collection("users")
-        .doc(user.uid)
-        .set(user);
-
-    }
-
+    return {
+      backend: _db ? 'Firebase' : 'localStorage',
+      ready: !!_db
+    };
   },
+
+  /* ── Users ── */
+
+  async saveUser(user) {
+    _init();
+    if (_db) {
+      await _db.collection("users").doc(user.uid).set(user);
+    }
+  },
+
+  async getUsers() {
+    _init();
+    if (!_db) return [];
+    try {
+      const snap = await _db.collection("users").get();
+      return snap.docs.map(doc => ({ uid: doc.id, ...doc.data() }));
+    } catch (err) {
+      console.error("getUsers failed:", err);
+      return [];
+    }
+  },
+
+  async deleteUser(uid) {
+    _init();
+    if (!_db) return;
+    await _db.collection("users").doc(uid).delete();
+  },
+
+  /* ── Logs ── */
 
   async addLog(log) {
-
     _init();
-
     if (_db) {
-
-      await _db
-        .collection("logs")
-        .add({
-          ...log,
-          timestamp: Date.now()
-        });
-
+      await _db.collection("logs").add({
+        ...log,
+        timestamp: Date.now()
+      });
     }
-
   },
 
-  async getRegs() {
-
+  async getLogs() {
     _init();
-
     if (!_db) return [];
+    try {
+      const snap = await _db
+        .collection("logs")
+        .orderBy("timestamp", "desc")
+        .limit(500)
+        .get();
+      return snap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    } catch (err) {
+      console.error("getLogs failed:", err);
+      return [];
+    }
+  },
 
+  async clearLogs() {
+    _init();
+    if (!_db) return;
+    try {
+      const snap = await _db.collection("logs").get();
+      const batch = _db.batch();
+      snap.docs.forEach(doc => batch.delete(doc.ref));
+      await batch.commit();
+    } catch (err) {
+      console.error("clearLogs failed:", err);
+    }
+  },
+
+  /* ── Registrations ── */
+
+  async getRegs() {
+    _init();
+    if (!_db) return [];
     const snap = await _db
       .collection("registrations")
       .orderBy("timestamp", "desc")
       .get();
-
     return snap.docs.map(doc => ({
       id: doc.id,
       ...doc.data()
     }));
+  },
 
+  async getRegById(id) {
+    _init();
+    if (!_db) return null;
+    try {
+      const doc = await _db.collection("registrations").doc(id).get();
+      if (!doc.exists) return null;
+      return { id: doc.id, ...doc.data() };
+    } catch (err) {
+      console.error("getRegById failed:", err);
+      return null;
+    }
   },
 
   async saveReg(reg) {
-
     _init();
-
     if (!_db) return null;
-
-    const ref = await _db
-      .collection("registrations")
-      .add({
-        ...reg,
-        timestamp: Date.now()
-      });
-
+    const ref = await _db.collection("registrations").add({
+      ...reg,
+      timestamp: Date.now()
+    });
     return ref.id;
+  },
 
+  async updateReg(id, patch) {
+    _init();
+    if (!_db) return;
+    await _db.collection("registrations").doc(id).update(patch);
   },
 
   async deleteReg(id) {
-
     _init();
-
     if (!_db) return;
+    await _db.collection("registrations").doc(id).delete();
+  },
 
-    await _db
-      .collection("registrations")
-      .doc(id)
-      .delete();
+  /* ── Settings ── */
 
+  async getSettings() {
+    _init();
+    if (!_db) return {};
+    try {
+      const doc = await _db.collection("settings").doc("global").get();
+      return doc.exists ? doc.data() : {};
+    } catch (err) {
+      console.error("getSettings failed:", err);
+      return {};
+    }
+  },
+
+  async saveSettings(settings) {
+    _init();
+    if (!_db) return;
+    await _db.collection("settings").doc("global").set(settings, { merge: true });
   }
 
 };
@@ -181,11 +247,11 @@ async function addLoginLog(email, type, status) {
 
     const db = firebase.firestore();
 
-    await db.collection("loginLogs").add({
+    await db.collection("logs").add({
       email: email || "Unknown",
-      type: type || "user",
+      action: type || "user_login",
       status: status || "success",
-      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      timestamp: Date.now()
     });
 
   } catch (err) {
