@@ -13,4 +13,3 @@ const ADMIN_PASS = "JIHANCEO";
 window.ADMIN_PASS = ADMIN_PASS;
 
 console.log("✅ firebase-config.js loaded with real config");
-console.log(window.FIREBASE_CONFIG);
