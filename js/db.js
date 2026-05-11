@@ -40,8 +40,6 @@ function _init() {
 
   try {
 
-    console.log("CONFIG:", window.FIREBASE_CONFIG);
-
     if (typeof firebase === "undefined") {
       console.error("Firebase SDK missing");
       return;
@@ -84,37 +82,112 @@ const DB = {
     return _auth;
   },
 
+  status() {
+    return {
+      backend: _db ? 'Firebase' : 'LocalStorage',
+      ready: !!_db
+    };
+  },
+
+  /* USERS */
+
   async saveUser(user) {
 
     _init();
 
-    if (_db) {
+    if (!_db) return;
 
-      await _db
-        .collection("users")
-        .doc(user.uid)
-        .set(user);
-
-    }
+    await _db
+      .collection("users")
+      .doc(user.uid)
+      .set(user);
 
   },
+
+  async getUsers() {
+
+    _init();
+
+    if (!_db) return [];
+
+    const snap = await _db
+      .collection("users")
+      .get();
+
+    return snap.docs.map(doc => ({
+      uid: doc.id,
+      ...doc.data()
+    }));
+
+  },
+
+  async deleteUser(uid) {
+
+    _init();
+
+    if (!_db) return;
+
+    await _db
+      .collection("users")
+      .doc(uid)
+      .delete();
+
+  },
+
+  /* LOGS */
 
   async addLog(log) {
 
     _init();
 
-    if (_db) {
+    if (!_db) return;
 
-      await _db
-        .collection("logs")
-        .add({
-          ...log,
-          timestamp: Date.now()
-        });
-
-    }
+    await _db
+      .collection("logs")
+      .add({
+        ...log,
+        timestamp: Date.now()
+      });
 
   },
+
+  async getLogs() {
+
+    _init();
+
+    if (!_db) return [];
+
+    const snap = await _db
+      .collection("logs")
+      .orderBy("timestamp", "desc")
+      .get();
+
+    return snap.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+  },
+
+  async clearLogs() {
+
+    _init();
+
+    if (!_db) return;
+
+    const snap = await _db.collection("logs").get();
+
+    const batch = _db.batch();
+
+    snap.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+
+    await batch.commit();
+
+  },
+
+  /* REGISTRATIONS */
 
   async getRegs() {
 
@@ -131,6 +204,26 @@ const DB = {
       id: doc.id,
       ...doc.data()
     }));
+
+  },
+
+  async getRegById(id) {
+
+    _init();
+
+    if (!_db) return null;
+
+    const doc = await _db
+      .collection("registrations")
+      .doc(id)
+      .get();
+
+    if (!doc.exists) return null;
+
+    return {
+      id: doc.id,
+      ...doc.data()
+    };
 
   },
 
@@ -151,6 +244,19 @@ const DB = {
 
   },
 
+  async updateReg(id, data) {
+
+    _init();
+
+    if (!_db) return;
+
+    await _db
+      .collection("registrations")
+      .doc(id)
+      .update(data);
+
+  },
+
   async deleteReg(id) {
 
     _init();
@@ -161,6 +267,36 @@ const DB = {
       .collection("registrations")
       .doc(id)
       .delete();
+
+  },
+
+  /* SETTINGS */
+
+  async getSettings() {
+
+    _init();
+
+    if (!_db) return {};
+
+    const doc = await _db
+      .collection("settings")
+      .doc("main")
+      .get();
+
+    return doc.exists ? doc.data() : {};
+
+  },
+
+  async saveSettings(settings) {
+
+    _init();
+
+    if (!_db) return;
+
+    await _db
+      .collection("settings")
+      .doc("main")
+      .set(settings);
 
   }
 

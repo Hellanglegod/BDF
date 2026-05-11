@@ -865,6 +865,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
   }
 
+await firebase.auth().setPersistence(
+  firebase.auth.Auth.Persistence.NONE
+);
+
   const signIn = async () => {
     clearAuthErr();
     const email = (document.getElementById('auth-email')?.value || '').trim();
@@ -902,8 +906,24 @@ try {
   console.warn('Login log failed:', err);
 }
       closeAuth();
-      // Resume to registration page
-      showPage('register');    } catch (e) {
+
+/* =========================
+   ADMIN REDIRECT
+========================= */
+
+if (isAdminUser(user)) {
+
+  console.log('Admin detected → redirecting');
+
+  window.location.href = 'admin.html';
+
+  return;
+}
+
+/* Normal users */
+
+showPage('register');
+    } catch (e) {
       showAuthErr(e?.message || 'Sign in failed. Please try again.');
       const emailFallback = (document.getElementById('auth-email')?.value || '').trim();
       try {
@@ -1058,63 +1078,109 @@ try {
 ========================= */
 if (typeof firebase !== 'undefined' && firebase.auth) {
 
-  firebase.auth().onAuthStateChanged((user) => {
+firebase.auth().onAuthStateChanged((user) => {
 
-  const signInBtn = document.querySelector('#sign-in-btn');
+  const signInBtn = document.querySelector('#nav-auth-btn');
+  const userPanel = document.querySelector('#user-panel');
+  const userEmail = document.querySelector('#user-email');
+  const logoutBtn = document.querySelector('#logout-btn');
   const authModal = document.querySelector('#auth-modal');
 
   if (user) {
 
     console.log('Logged in:', user.email);
 
-    // Close modal
+    sessionStorage.setItem(
+      'wpsa_user_email',
+      user.email || ''
+    );
+
+    if (isAdminUser(user)) {
+
+      sessionStorage.setItem(
+        'wpsa_admin',
+        'true'
+      );
+
+    } else {
+
+      sessionStorage.removeItem(
+        'wpsa_admin'
+      );
+
+    }
+
+    // Close auth modal
     if (authModal) {
       authModal.classList.remove('open');
     }
 
-    // Update button text
+    // Hide sign in button
     if (signInBtn) {
-      signInBtn.textContent = user.email;
+      signInBtn.style.display = 'none';
     }
 
-    // Add logged-in class
+    // Show user panel
+    if (userPanel) {
+      userPanel.style.display = 'flex';
+    }
+
+    // Show email
+    if (userEmail) {
+      userEmail.textContent = user.email || 'User';
+    }
+
+    // Logout button
+    if (logoutBtn && !logoutBtn.dataset.bound) {
+
+      logoutBtn.dataset.bound = 'true';
+
+      logoutBtn.addEventListener('click', async () => {
+
+        try {
+
+          await firebase.auth().signOut();
+
+          sessionStorage.removeItem('wpsa_admin');
+          sessionStorage.removeItem('wpsa_user_email');
+
+          window.location.href = 'index.html';
+
+        } catch (e) {
+
+          console.error('Logout failed:', e);
+
+        }
+
+      });
+
+    }
+
     document.body.classList.add('logged-in');
-
-    sessionStorage.setItem(
-  'wpsa_user_email',
-  user.email || ''
-);
-
-if (isAdminUser(user)) {
-
-  sessionStorage.setItem(
-    'wpsa_admin',
-    'true'
-  );
-
-} else {
-
-  sessionStorage.removeItem(
-    'wpsa_admin'
-  );
-
-}
 
   } else {
 
     console.log('User signed out');
 
+    sessionStorage.removeItem('wpsa_admin');
+    sessionStorage.removeItem('wpsa_user_email');
+
+    // Show sign in button
     if (signInBtn) {
-      signInBtn.textContent = 'SIGN IN';
+      signInBtn.style.display = 'inline-flex';
+    }
+
+    // Hide user panel
+    if (userPanel) {
+      userPanel.style.display = 'none';
+    }
+
+    // Clear email
+    if (userEmail) {
+      userEmail.textContent = '';
     }
 
     document.body.classList.remove('logged-in');
-
-    sessionStorage.removeItem('wpsa_admin');
-
-sessionStorage.removeItem(
-  'wpsa_user_email'
-);
 
   }
 

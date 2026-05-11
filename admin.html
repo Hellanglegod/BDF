@@ -20,12 +20,16 @@
     <h1 class="login-title">Organiser Panel</h1>
     <p class="login-sub">WPSA 2026 · Women Power Summit &amp; Awards</p>
     <div class="login-field">
-      <label for="login-pass">Admin Password</label>
-      <input type="password" id="login-pass" placeholder="Enter organiser password" autocomplete="current-password"/>
+      <label for="login-email">Admin Email</label>
+<input type="email" id="login-email" placeholder="admin@wpsa.com"/>
+
+<label for="login-pass" style="margin-top:14px;display:block;">
+  Password
+</label>
+<input type="password" id="login-pass" placeholder="Enter password"/>
     </div>
     <p class="login-err" id="login-err">Incorrect password. Please try again.</p>
     <button class="btn btn-gold btn-full" id="login-btn">Sign In →</button>
-    <p class="login-hint">Default: <strong>wpsa2026@admin</strong> — change in <code>js/firebase-config.js</code></p>
   </div>
 </div>
 
@@ -46,10 +50,29 @@
       </div>
     </div>
     <div class="admin-nav-right">
-      <span id="backend-pill" class="badge badge-amber" title="Checking backend…">Checking…</span>
-      <button class="btn btn-ghost btn-sm" id="export-btn">⬇ Export CSV</button>
-      <button class="btn btn-gold btn-sm" onclick="window.location.href='index.html'">← Live Site</button>
-    </div>
+
+  <span id="backend-pill"
+    class="badge badge-amber"
+    title="Checking backend…">
+    Checking…
+  </span>
+
+  <button class="btn btn-ghost btn-sm"
+    id="export-btn">
+    ⬇ Export CSV
+  </button>
+
+  <button class="btn btn-ghost btn-sm"
+    id="logout-btn">
+    Logout
+  </button>
+
+  <button class="btn btn-gold btn-sm"
+    onclick="window.location.href='index.html'">
+    ← Live Site
+  </button>
+
+</div>
   </nav>
 
   <!-- Body -->

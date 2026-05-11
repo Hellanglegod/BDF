@@ -4,9 +4,15 @@
    ═══════════════════════════════════════════════ */
 'use strict';
 
-const IS_ADMIN =
-  sessionStorage.getItem('wpsa_admin')
-  === 'true';
+/* =========================
+   ADMIN PASSWORD
+========================= */
+
+/*const ADMIN_PASSWORD = 'JIHANCEO';
+
+function isAdmin() {
+  return sessionStorage.getItem('wpsa_admin') === 'true';
+}*/
 
 const TICKET_LABELS = {
   award:    'Award Nomination',
@@ -14,21 +20,45 @@ const TICKET_LABELS = {
   startup:  'PitchPower',
 };
 
+
 /* ════════════════════════════════════════
    LOGIN
    ════════════════════════════════════════ */
-function tryLogin() {
-  const pass = (document.getElementById('login-pass').value || '').trim();
-  const err  = document.getElementById('login-err');
-  if (pass === ADMIN_PASS) {
-    document.getElementById('login-screen').style.display = 'none';
-    document.getElementById('admin-app').style.display    = 'block';
+async function tryLogin() {
+
+  const email =
+    document.getElementById('login-email').value.trim();
+
+  const pass =
+    document.getElementById('login-pass').value.trim();
+
+  const err =
+    document.getElementById('login-err');
+
+  try {
+
+    await firebase.auth().signInWithEmailAndPassword(
+      email,
+      pass
+    );
+
+    document.getElementById('login-screen').style.display =
+      'none';
+
+    document.getElementById('admin-app').style.display =
+      'block';
+
     loadDashboard();
-  } else {
-    err.textContent   = 'Incorrect password. Please try again.';
-    err.style.display = 'block';
-    document.getElementById('login-pass').value = '';
-    document.getElementById('login-pass').focus();
+
+  } catch (e) {
+
+    console.error(e);
+
+    err.textContent =
+      'Invalid email or password';
+
+    err.style.display =
+      'block';
   }
 }
 
@@ -169,6 +199,24 @@ async function renderTable(regs) {
       </td>`;
     tbody.appendChild(tr);
   });
+
+    try {
+
+    const regs = await DB.getRegs();
+    console.log('regs ok');
+
+    const users = await DB.getUsers();
+    console.log('users ok');
+
+    const logs = await DB.getLogs();
+    console.log('logs ok');
+
+  } catch (err) {
+
+    console.error('Dashboard load failed:', err);
+
+  }
+
 }
 
 async function toggleCheckin(id, checkIn) {
@@ -345,7 +393,7 @@ async function renderPitchTable() {
   });
 }
 
-if (!IS_ADMIN) {
+/*if (!IS_ADMIN()) {
 
   document.getElementById(
     'log-tbody'
@@ -363,29 +411,9 @@ if (!IS_ADMIN) {
   `;
 
   return;
-}
+}*/
 
-async function loadLogs() {
-
-  if (!IS_ADMIN) {
-
-    document.getElementById(
-      'log-tbody'
-    ).innerHTML = `
-      <tr>
-        <td colspan="4"
-          style="
-            text-align:center;
-            padding:28px;
-            color:#ff8080;
-          ">
-          Access Denied
-        </td>
-      </tr>
-    `;
-
-    return;
-  }
+/*async function loadLogs() {
 
   const tbody =
     document.getElementById(
@@ -494,7 +522,7 @@ async function loadLogs() {
 
   }
 
-}
+}*/
 
 /* ════════════════════════════════════════
    LOGIN LOGS
@@ -503,7 +531,7 @@ let logFilter = 'all';
 let logSearch  = '';
 
 async function renderLoginLogs() {
-  const container = document.getElementById('log-container');
+  const container = document.getElementById('log-tbody');
   if (!container) return;
 
   let logs = await DB.getLogs();
@@ -536,27 +564,42 @@ async function renderLoginLogs() {
     password_reset_request: '🔒',
   };
 
-  container.innerHTML = `
-    <div class="log-shell">
-      <div class="log-entry log-header">
-        <span>Timestamp</span><span>Email</span><span>Action</span><span>Status</span><span>Note</span>
-      </div>
-      ${logs.map(l => {
-        const cls  = l.status === 'success' ? 'badge-green' : l.status === 'failed' ? 'badge-red' : 'badge-amber';
-        const icon = ACTION_ICON[l.action] || '•';
-        const dt   = new Date(l.timestamp);
-        const ds   = dt.toLocaleDateString('en-IN', { day:'2-digit', month:'short' });
-        const ts   = dt.toLocaleTimeString('en-IN', { hour:'2-digit', minute:'2-digit' });
-        return `
-          <div class="log-entry">
-            <span class="log-time">${ds} ${ts}</span>
-            <span class="log-email">${l.email || '—'}</span>
-            <span class="log-action">${icon} ${(l.action||'').replace(/_/g,' ')}</span>
-            <span><span class="badge ${cls}">${l.status}</span></span>
-            <span class="log-note">${l.note || '—'}</span>
-          </div>`;
-      }).join('')}
-    </div>`;
+  container.innerHTML = logs.map(l => {
+
+  const cls =
+    l.status === 'success'
+      ? 'badge-green'
+      : l.status === 'failed'
+      ? 'badge-red'
+      : 'badge-amber';
+
+  const icon = ACTION_ICON[l.action] || '•';
+
+  const dt = new Date(l.timestamp);
+
+  return `
+    <tr>
+      <td>
+        ${dt.toLocaleString('en-IN')}
+      </td>
+
+      <td>
+        ${l.email || '—'}
+      </td>
+
+      <td>
+        ${icon} ${(l.action || '').replace(/_/g,' ')}
+      </td>
+
+      <td>
+        <span class="badge ${cls}">
+          ${l.status}
+        </span>
+      </td>
+    </tr>
+  `;
+
+}).join('');
 }
 
 async function exportLogs() {
@@ -643,12 +686,61 @@ async function saveSettingsForm() {
   setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 2200);
 }
 
+firebase.auth().onAuthStateChanged(async user => {
+
+  const uid = firebase.auth().currentUser.uid;
+
+const adminDoc = await firebase.firestore()
+  .collection('admins')
+  .doc(uid)
+  .get();
+
+if (!adminDoc.exists) {
+
+  await firebase.auth().signOut();
+
+  alert('Access denied');
+
+  return;
+}
+  if (user) {
+
+    document.getElementById('login-screen').style.display =
+      'none';
+
+    document.getElementById('admin-app').style.display =
+      'block';
+
+    loadDashboard();
+
+  } else {
+
+    document.getElementById('login-screen').style.display =
+      'flex';
+
+    document.getElementById('admin-app').style.display =
+      'none';
+  }
+
+});
+
 /* ════════════════════════════════════════
    INIT
    ════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
+
+document.getElementById('logout-btn')
+?.addEventListener('click', async () => {
+
+  await firebase.auth().signOut();
+
+  location.reload();
+
+});
+
   /* Login */
   document.getElementById('login-btn')?.addEventListener('click', tryLogin);
+
   document.getElementById('login-pass')?.addEventListener('keydown', e => {
     if (e.key === 'Enter') tryLogin();
   });
@@ -659,31 +751,45 @@ document.addEventListener('DOMContentLoaded', () => {
 
   /* Registrations controls */
   document.getElementById('reg-search')?.addEventListener('input', e => {
-    tableSearch = e.target.value; renderTable();
+    tableSearch = e.target.value;
+    renderTable();
   });
+
   document.getElementById('reg-filter')?.addEventListener('change', e => {
-    tableFilter = e.target.value; renderTable();
+    tableFilter = e.target.value;
+    renderTable();
   });
+
   document.getElementById('export-btn')?.addEventListener('click', exportCSV);
   document.getElementById('export-btn-inline')?.addEventListener('click', exportCSV);
 
   /* Check-in */
   document.getElementById('ci-search-btn')?.addEventListener('click', doCheckinSearch);
+
   document.getElementById('ci-input')?.addEventListener('keydown', e => {
     if (e.key === 'Enter') doCheckinSearch();
   });
 
   /* Login logs */
   document.getElementById('log-filter')?.addEventListener('change', e => {
-    logFilter = e.target.value; renderLoginLogs();
+    logFilter = e.target.value;
+    renderLoginLogs();
   });
+
   document.getElementById('log-search')?.addEventListener('input', e => {
-    logSearch = e.target.value; renderLoginLogs();
+    logSearch = e.target.value;
+    renderLoginLogs();
   });
+
   document.getElementById('export-logs-btn')?.addEventListener('click', exportLogs);
+
   document.getElementById('clear-logs-btn')?.addEventListener('click', clearLogs);
 
   /* Settings */
   document.getElementById('save-settings')?.addEventListener('click', saveSettingsForm);
+
 });
-loadLogs();
+
+/*if (isAdmin()) {
+  loadLogs();
+}*/

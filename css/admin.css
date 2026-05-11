@@ -251,3 +251,14 @@ input, select, textarea { font-family: inherit; }
   .admin-nav-brand-text { display: none; }
   .stat-strip { grid-template-columns: repeat(2, 1fr); }
 }
+
+#admin-app{
+  display:none;
+}
+
+#login-screen{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
