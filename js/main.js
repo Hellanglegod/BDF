@@ -614,7 +614,8 @@ async function finaliseReg() {
     document.getElementById('pitch-panel').classList.add('show');
   }
 
-  currentReg = null;
+  // FIX-5: keep currentReg so printReceipt/downloadReceiptTxt work after payment
+  currentReg = reg;
 }
 
 /* ═════════════════════════════════
@@ -895,7 +896,7 @@ await new Promise(r => setTimeout(r, 300));
 try {
   await DB.addLog({
     email,
-    action: isAdminUser(user) ? 'admin_login' : 'user_login',
+    action: 'login',
     status: 'success',
     note: isAdminUser(user)
       ? 'Admin signed in'
@@ -967,7 +968,7 @@ showPage('register');
       try {
   await DB.addLog({
     email,
-    action: 'user_register',
+    action: 'register',
     status: 'success',
     note: 'User registered',
     adminOnly: true
@@ -1007,20 +1008,20 @@ showPage('register');
   document.querySelectorAll('.nav-link').forEach(l => l.addEventListener('click', () => {
     const target = l.dataset.page;
     if (target === 'register') {
-      const isAuthed = !!(sessionStorage.getItem('wpsa_user_email') || firebase?.auth?.()?.currentUser);
+      const isAuthed = !!(sessionStorage.getItem('wpsa_user_email') || (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length && firebase.auth().currentUser));
       if (!isAuthed) { setPendingTarget('register'); openAuth('login'); return; }
     }
     showPage(target);
   }));
 
   document.getElementById('nav-cta')?.addEventListener('click', () => {
-    const isAuthed = !!(sessionStorage.getItem('wpsa_user_email') || firebase?.auth?.()?.currentUser);
+    const isAuthed = !!(sessionStorage.getItem('wpsa_user_email') || (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length && firebase.auth().currentUser));
     if (!isAuthed) { setPendingTarget('register'); openAuth('login'); return; }
     showPage('register');
   });
   
   document.getElementById('nav-auth-btn')?.addEventListener('click', () => {
-    const isAuthed = !!(sessionStorage.getItem('wpsa_user_email') || firebase?.auth?.()?.currentUser);
+    const isAuthed = !!(sessionStorage.getItem('wpsa_user_email') || (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length && firebase.auth().currentUser));
     if (!isAuthed) { setPendingTarget('register'); openAuth('login'); return; }
     showPage('register');
   });

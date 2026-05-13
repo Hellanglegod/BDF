@@ -8,7 +8,7 @@ window.FIREBASE_CONFIG = {
   measurementId: "G-V8LK7CHGEJ"
 };
 
-const ADMIN_PASS = "JIHANCEO";
+const ADMIN_PASS = "JIHANCEO123";
 
 window.ADMIN_PASS = ADMIN_PASS;
 

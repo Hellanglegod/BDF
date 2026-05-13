@@ -25,40 +25,39 @@ const TICKET_LABELS = {
    LOGIN
    ════════════════════════════════════════ */
 async function tryLogin() {
+  const email = (document.getElementById('login-email')?.value || '').trim();
+  const pass  = (document.getElementById('login-pass')?.value  || '').trim();
+  const err   = document.getElementById('login-err');
+  if (err) { err.style.display = 'none'; err.textContent = ''; }
 
-  const email =
-    document.getElementById('login-email').value.trim();
-
-  const pass =
-    document.getElementById('login-pass').value.trim();
-
-  const err =
-    document.getElementById('login-err');
-
-  try {
-
-    await firebase.auth().signInWithEmailAndPassword(
-      email,
-      pass
-    );
-
-    document.getElementById('login-screen').style.display =
-      'none';
-
-    document.getElementById('admin-app').style.display =
-      'block';
-
+  function _showApp() {
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-app').style.display    = 'block';
     loadDashboard();
+  }
+  function _showErr(msg) {
+    if (err) { err.textContent = msg; err.style.display = 'block'; }
+  }
 
-  } catch (e) {
-
-    console.error(e);
-
-    err.textContent =
-      'Invalid email or password';
-
-    err.style.display =
-      'block';
+  // FIX: When Firebase is configured use Firebase Auth;
+  // otherwise fall back to the ADMIN_PASS constant (localStorage demo mode).
+  if (DB.isFirebase()) {
+    try {
+      await firebase.auth().signInWithEmailAndPassword(email, pass);
+      _showApp();
+    } catch (e) {
+      console.error('[Admin] signIn failed:', e.code);
+      _showErr(e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found'
+        ? 'Incorrect email or password.'
+        : 'Login failed: ' + (e.message || e.code));
+    }
+  } else {
+    // localStorage fallback — check ADMIN_PASS from firebase-config.js
+    if (typeof ADMIN_PASS !== 'undefined' && pass === ADMIN_PASS) {
+      _showApp();
+    } else {
+      _showErr('Incorrect password.');
+    }
   }
 }
 
@@ -553,7 +552,7 @@ async function renderLoginLogs() {
   }
 
   if (!logs.length) {
-    container.innerHTML = `<div style="text-align:center;padding:40px;color:var(--txt4);">No activity logged yet. Events appear as soon as users interact with the site.</div>`;
+    container.innerHTML = `<tr><td colspan="5" style="text-align:center;padding:36px;color:var(--txt4);">No activity logged yet. Events appear as soon as users interact with the site.</td></tr>`;
     return;
   }
 
@@ -686,56 +685,18 @@ async function saveSettingsForm() {
   setTimeout(() => { btn.textContent = orig; btn.style.background = ''; }, 2200);
 }
 
-firebase.auth().onAuthStateChanged(async user => {
+/* FIX-10/11/12: Removed broken top-level onAuthStateChanged. */
 
-  const uid = firebase.auth().currentUser.uid;
-
-const adminDoc = await firebase.firestore()
-  .collection('admins')
-  .doc(uid)
-  .get();
-
-if (!adminDoc.exists) {
-
-  await firebase.auth().signOut();
-
-  alert('Access denied');
-
-  return;
-}
-  if (user) {
-
-    document.getElementById('login-screen').style.display =
-      'none';
-
-    document.getElementById('admin-app').style.display =
-      'block';
-
-    loadDashboard();
-
-  } else {
-
-    document.getElementById('login-screen').style.display =
-      'flex';
-
-    document.getElementById('admin-app').style.display =
-      'none';
-  }
-
-});
 
 /* ════════════════════════════════════════
    INIT
    ════════════════════════════════════════ */
 document.addEventListener('DOMContentLoaded', () => {
 
-document.getElementById('logout-btn')
-?.addEventListener('click', async () => {
-
-  await firebase.auth().signOut();
-
+document.getElementById('logout-btn')?.addEventListener('click', async () => {
+  // FIX: guard signOut for localStorage mode
+  if (DB.isFirebase()) await firebase.auth().signOut().catch(() => {});
   location.reload();
-
 });
 
   /* Login */
