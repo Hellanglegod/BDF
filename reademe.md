@@ -210,7 +210,7 @@ That's it — Firebase will now accept auth requests from your GitHub Pages URL.
 
 ```bash
 git add .
-git commit -m "update: describe what changed"
+git commit -m "Minor bug fixes"
 git push
 ```
 
