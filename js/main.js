@@ -602,6 +602,12 @@ async function finaliseReg() {
     } catch (e2) {
       console.error('All save attempts failed', e2);
     }
+    
+    await DB.addLog({
+  email: reg.email,
+  action: 'registration_complete',
+  status: 'success'
+});
   }
 
   // Show success screen

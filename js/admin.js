@@ -44,7 +44,14 @@ async function tryLogin() {
   if (DB.isFirebase()) {
     try {
       await firebase.auth().signInWithEmailAndPassword(email, pass);
-      _showApp();
+
+await DB.addLog({
+  email,
+  action: 'login',
+  status: 'success'
+});
+
+_showApp();
     } catch (e) {
       console.error('[Admin] signIn failed:', e.code);
       _showErr(e.code === 'auth/wrong-password' || e.code === 'auth/user-not-found'
@@ -59,6 +66,14 @@ async function tryLogin() {
       _showErr('Incorrect password.');
     }
   }
+
+  await DB.addLog({
+  action: 'login',
+  status: 'success',
+  email,
+  timestamp: new Date().toISOString()
+});
+
 }
 
 /* ════════════════════════════════════════
@@ -694,8 +709,19 @@ async function saveSettingsForm() {
 document.addEventListener('DOMContentLoaded', () => {
 
 document.getElementById('logout-btn')?.addEventListener('click', async () => {
-  // FIX: guard signOut for localStorage mode
-  if (DB.isFirebase()) await firebase.auth().signOut().catch(() => {});
+
+  const user = firebase.auth().currentUser;
+
+  await DB.addLog({
+    email: user?.email || '',
+    action: 'logout',
+    status: 'success'
+  });
+
+  if (DB.isFirebase()) {
+    await firebase.auth().signOut().catch(() => {});
+  }
+
   location.reload();
 });
 
