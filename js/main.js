@@ -904,7 +904,12 @@ try {
     
   });
 } catch (err) {
-  console.warn('Login log failed:', err);
+  console.error(
+  '🔥 FIRESTORE LOG ERROR:',
+  err.code,
+  err.message,
+  err
+);
 }
       closeAuth();
 
