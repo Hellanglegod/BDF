@@ -901,7 +901,7 @@ try {
     note: isAdminUser(user)
       ? 'Admin signed in'
       : 'User signed in',
-    adminOnly: true
+    
   });
 } catch (err) {
   console.warn('Login log failed:', err);
@@ -930,10 +930,10 @@ showPage('register');
       try {
   await DB.addLog({
     email: emailFallback || 'unknown',
-    action: 'login_failed',
+    action: 'login',
     status: 'failed',
     note: (e && e.code) ? e.code : 'error',
-    adminOnly: true
+    
   });
 } catch (err) {
   console.warn('Failed login log failed:', err);
@@ -971,7 +971,7 @@ showPage('register');
     action: 'register',
     status: 'success',
     note: 'User registered',
-    adminOnly: true
+    
   });
 } catch (err) {
   console.warn('Signup log failed:', err);
@@ -985,10 +985,10 @@ showPage('register');
       try {
   await DB.addLog({
     email: email || 'unknown',
-    action: 'register_failed',
+    action: 'register',
     status: 'failed',
     note: (e && e.code) ? e.code : 'error',
-    adminOnly: true
+    
   });
 } catch (err) {
   console.warn('Register failed log failed:', err);
