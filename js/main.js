@@ -867,7 +867,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
 
 await firebase.auth().setPersistence(
-  firebase.auth.Auth.Persistence.NONE
+  firebase.auth.Auth.Persistence.LOCAL
 );
 
   const signIn = async () => {
