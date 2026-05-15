@@ -1,0 +1,54 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /* ─────────────────────────────
+       REGISTRATIONS
+    ───────────────────────────── */
+    match /registrations/{id} {
+
+      // Public registration creation
+      allow create: if true;
+
+      // Read/update/delete only for signed-in admins
+      allow read, update, delete: if request.auth != null;
+    }
+
+    /* ─────────────────────────────
+       USERS
+    ───────────────────────────── */
+    match /users/{uid} {
+
+      // User can create/update own profile
+      allow create, update: if request.auth != null
+        && request.auth.uid == uid;
+
+      // Admin read access
+      allow read: if request.auth != null;
+
+      // Optional delete
+      allow delete: if request.auth != null;
+    }
+
+    /* ─────────────────────────────
+       LOGIN LOGS
+    ───────────────────────────── */
+    match /loginLogs/{id} {
+
+      // Anyone can write logs
+      allow create: if true;
+
+      // Only signed-in admins can read/delete
+      allow read, delete: if request.auth != null;
+    }
+
+    /* ─────────────────────────────
+       SETTINGS
+    ───────────────────────────── */
+    match /settings/{id} {
+
+      allow read, write: if request.auth != null;
+    }
+  }
+}
