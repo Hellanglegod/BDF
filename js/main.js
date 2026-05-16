@@ -616,9 +616,9 @@ async function finaliseReg() {
   renderReceipt(reg);
   document.getElementById('receipt-wrap').classList.add('show');
 
-  if (reg.ticket === 'startup') {
-    document.getElementById('pitch-panel').classList.add('show');
-  }
+ if (reg.ticket === 'startup' || reg.ticket === 'award') {
+  document.getElementById('pitch-panel').classList.add('show');
+}
 
   // FIX-5: keep currentReg so printReceipt/downloadReceiptTxt work after payment
   currentReg = reg;
@@ -858,23 +858,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     setAuthMode(m === 'login' ? 'register' : 'login');
   });
 
-  // Firebase Auth handlers
-  let currentUser = null;
-  if (auth && typeof firebase !== 'undefined') {
-    firebase.auth().onAuthStateChanged((u) => {
-      currentUser = u;
-      // Persist UI state for pitch + receipt access
-      if (u?.email) {
-        sessionStorage.setItem('wpsa_user_email', u.email);
-      } else {
-        sessionStorage.removeItem('wpsa_user_email');
-      }
-    });
-  }
-
-await firebase.auth().setPersistence(
-  firebase.auth.Auth.Persistence.LOCAL
-);
+  await firebase.auth().setPersistence(
+    firebase.auth.Auth.Persistence.LOCAL
+  );
 
   const signIn = async () => {
     clearAuthErr();
@@ -1169,6 +1155,7 @@ firebase.auth().onAuthStateChanged((user) => {
     }
 
     document.body.classList.add('logged-in');
+    loadUserRegistration(user);
 
   } else {
 
@@ -1196,59 +1183,72 @@ firebase.auth().onAuthStateChanged((user) => {
 
   }
 
+async function loadUserRegistration(user) {
+
+  if (!user?.email) return;
+
+  try {
+
+    const regs = await DB.getRegs();
+
+    const reg = regs
+  .filter(r =>
+    (r.email || '').toLowerCase() ===
+    user.email.toLowerCase()
+  )
+  .sort((a,b) =>
+    new Date(b.timestamp) -
+    new Date(a.timestamp)
+  )[0];
+
+    if (!reg) {
+
+      console.log('No registration found');
+
+      return;
+
+    }
+
+    console.log('Existing registration found:', reg);
+
+    currentReg = reg;
+
+    showExistingRegistration(reg);
+
+  } catch (e) {
+
+    console.error(
+      'Failed loading registration:',
+      e
+    );
+
+  }
+
+}
+
+});
+
 function showExistingRegistration(reg) {
 
   document.getElementById("reg-form-wrap").style.display = "none";
 
   document.getElementById("reg-success").style.display = "block";
 
-  document.getElementById("receipt-wrap").style.display = "block";
+  document.getElementById("receipt-wrap").classList.add("show");
 
-  document.getElementById("rcpt-id").textContent = reg.registrationId || "—";
-
-  document.getElementById("rcpt-name").textContent =
-    `${reg.firstName || ""} ${reg.lastName || ""}`;
-
-  document.getElementById("rcpt-email").textContent =
-    reg.email || "—";
-
-  document.getElementById("rcpt-org").textContent =
-    reg.organization || "—";
-
-  document.getElementById("rcpt-pass").textContent =
-    reg.passType || "—";
-
-  document.getElementById("rcpt-amt").textContent =
-    `₹${reg.amount || 0}`;
-
-  document.getElementById("rcpt-pay").textContent =
-    reg.paymentMethod || "Online";
-
-  document.getElementById("rcpt-date").textContent =
-    reg.createdAt
-      ? new Date(reg.createdAt.seconds * 1000).toLocaleString()
-      : "—";
-
-  if (reg.awardCategories?.length) {
-
-    document.getElementById("rcpt-awards-row").style.display = "flex";
-
-    document.getElementById("rcpt-awards").textContent =
-      reg.awardCategories.join(", ");
-
-  }
+  renderReceipt(reg);
 
   if (
-    reg.passType === "startup" ||
-    reg.passType === "award"
+    reg.ticket === "startup" ||
+    reg.ticket === "award"
   ) {
 
-    document.getElementById("pitch-panel").style.display = "block";
+    document.getElementById("pitch-panel")
+      ?.classList.add("show");
 
   }
 
 }
-});
 
 } else {
 

@@ -67,6 +67,17 @@ _showApp();
     }
   }
 
+async function loadUserTicket() {
+  if (DB.isFirebase()) {
+    const user = firebase.auth().currentUser;
+    if (!user) return;
+    const userDoc = await DB.getUserById(user.uid);
+    if (!userDoc) return;
+    const ticket = userDoc.ticket; // Assuming ticket info is saved in user profile
+    showTicketBasedUI(ticket, userDoc);
+  }
+}
+
   await DB.addLog({
   action: 'login',
   status: 'success',
@@ -133,6 +144,26 @@ async function loadDashboard() {
   }
 
   renderTable(regs);
+}
+
+function showTicketBasedUI(ticket, user) {
+  // Hide all conditional sections first
+  document.getElementById('pitch-panel').style.display = 'none';
+  document.getElementById('reg-ticket-display').style.display = 'none';
+
+  // Show based on ticket type
+  if (ticket === 'delegate') {
+    document.getElementById('reg-ticket-display').innerText = 'Your Ticket: Delegate Pass';
+    document.getElementById('reg-ticket-display').style.display = 'block';
+  } else if (ticket === 'award') {
+    document.getElementById('reg-ticket-display').innerText = 'Your Ticket: Award Nomination';
+    document.getElementById('reg-ticket-display').style.display = 'block';
+    document.getElementById('pitch-panel').style.display = 'block';
+  } else if (ticket === 'startup') {
+    document.getElementById('reg-ticket-display').innerText = 'Your Ticket: PitchPower';
+    document.getElementById('reg-ticket-display').style.display = 'block';
+    document.getElementById('pitch-panel').style.display = 'block';
+  }
 }
 
 function _set(id, val) {

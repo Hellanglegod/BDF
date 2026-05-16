@@ -8,12 +8,20 @@ window.FIREBASE_CONFIG = {
   measurementId: "G-V8LK7CHGEJ"
 };
 
-firebase.initializeApp(FIREBASE_CONFIG);
+/* FIX */
+if (!firebase.apps.length) {
+  firebase.initializeApp(window.FIREBASE_CONFIG);
+}
 
 const auth = firebase.auth();
 const db = firebase.firestore();
 const storage = firebase.storage();
+
+window.auth = auth;
+window.db = db;
+window.storage = storage;
+
 const ADMIN_PASS = "JIHANCEO123";
 window.ADMIN_PASS = ADMIN_PASS;
 
-console.log("✅ firebase-config.js loaded with real config");
+console.log("✅ Firebase initialized correctly");

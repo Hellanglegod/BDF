@@ -218,6 +218,17 @@ const DB = {
     return LS.get('wpsa_users') || [];
   },
 
+  async getUserById(uid) {
+  this._init();
+  if (this.isFirebase()) {
+    try {
+      const doc = await this._db.collection('users').doc(uid).get();
+      return doc.exists ? { ...doc.data(), uid: doc.id } : null;
+    } catch (e) { console.error('[DB] getUserById failed:', e); }
+  }
+  return null; // Fallback if localStorage
+},
+
   async saveUser(user) {
     _init();
     const uid = user.uid || user.email;
