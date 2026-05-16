@@ -9,7 +9,7 @@ window.FIREBASE_CONFIG = {
 };
 
 const ADMIN_PASS = "JIHANCEO123";
-
+const storage = firebase.storage();
 window.ADMIN_PASS = ADMIN_PASS;
 
 console.log("✅ firebase-config.js loaded with real config");

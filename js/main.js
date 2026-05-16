@@ -1196,7 +1196,55 @@ firebase.auth().onAuthStateChanged((user) => {
 
   }
 
-});
+function showExistingRegistration(reg) {
+
+  document.getElementById("reg-form-wrap").style.display = "none";
+
+  document.getElementById("reg-success").style.display = "block";
+
+  document.getElementById("receipt-wrap").style.display = "block";
+
+  document.getElementById("rcpt-id").textContent = reg.registrationId || "—";
+
+  document.getElementById("rcpt-name").textContent =
+    `${reg.firstName || ""} ${reg.lastName || ""}`;
+
+  document.getElementById("rcpt-email").textContent =
+    reg.email || "—";
+
+  document.getElementById("rcpt-org").textContent =
+    reg.organization || "—";
+
+  document.getElementById("rcpt-pass").textContent =
+    reg.passType || "—";
+
+  document.getElementById("rcpt-amt").textContent =
+    `₹${reg.amount || 0}`;
+
+  document.getElementById("rcpt-pay").textContent =
+    reg.paymentMethod || "Online";
+
+  document.getElementById("rcpt-date").textContent =
+    reg.createdAt
+      ? new Date(reg.createdAt.seconds * 1000).toLocaleString()
+      : "—";
+
+  if (reg.awardCategories?.length) {
+
+    document.getElementById("rcpt-awards-row").style.display = "flex";
+
+    document.getElementById("rcpt-awards").textContent =
+      reg.awardCategories.join(", ");
+
+  }
+
+  if (
+    reg.passType === "startup" ||
+    reg.passType === "award"
+  ) {
+
+    document.getElementById("pitch-panel").style.display = "block";
+
+  }
 
 }
-});

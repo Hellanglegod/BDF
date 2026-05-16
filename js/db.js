@@ -267,3 +267,51 @@ document.addEventListener('DOMContentLoaded', () => {
   const s = DB.status();
   console.log(`%c[DB] ${s.backend}`, `color:${s.ready ? '#4caf82' : '#f5a020'};font-weight:bold`);
 });
+
+const pitchInput = document.getElementById("pitch-input");
+
+pitchInput?.addEventListener("change", async (e) => {
+
+  const files = [...e.target.files];
+
+  const user = auth.currentUser;
+
+  if (!user || !files.length) return;
+
+  const status = document.getElementById("pitch-status");
+
+  status.textContent = "Uploading...";
+
+  try {
+
+    for (const file of files) {
+
+      const ref = storage
+        .ref()
+        .child(`pitch-decks/${user.uid}/${Date.now()}-${file.name}`);
+
+      await ref.put(file);
+
+      const url = await ref.getDownloadURL();
+
+      await db.collection("pitch_submissions").add({
+        uid: user.uid,
+        email: user.email,
+        fileName: file.name,
+        fileUrl: url,
+        uploadedAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+
+    }
+
+    status.textContent = "Pitch uploaded successfully.";
+
+  } catch (err) {
+
+    console.error(err);
+
+    status.textContent = "Upload failed.";
+
+  }
+
+});
