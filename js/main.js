@@ -1248,3 +1248,11 @@ function showExistingRegistration(reg) {
   }
 
 }
+});
+
+} else {
+
+  console.warn('Firebase Auth not available, skipping auth state listener');
+
+}
+});
