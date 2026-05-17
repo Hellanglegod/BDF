@@ -111,7 +111,7 @@ After making changes locally, push them to GitHub:
 
 ```bash
 git add .
-git commit -m "Update: Award presentation file upload fixing" 
+git commit -m "Update: Button redirection Fixed" 
 git push
 ```
 

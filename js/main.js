@@ -1082,16 +1082,26 @@ showPage('register');
     showPage('register');
   });
 
+  document.getElementById('hero-apply')?.addEventListener('click', () => {
+    const isAuthed = !!(sessionStorage.getItem('wpsa_user_email') || (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length && firebase.auth().currentUser));
+    if (!isAuthed) { setPendingTarget('register'); openAuth('login'); return; }
+    showPage('register');
+  });
+  
+  document.getElementById('pricing-apply')?.addEventListener('click', () => {
+    const isAuthed = !!(sessionStorage.getItem('wpsa_user_email') || (typeof firebase !== 'undefined' && firebase.apps && firebase.apps.length && firebase.auth().currentUser));
+    if (!isAuthed) { setPendingTarget('register'); openAuth('login'); return; }
+    showPage('register');
+  });
+
   initMobileNav();
 
 
   /* Hero buttons */
-  document.getElementById('hero-apply')?.addEventListener('click', () => showPage('register'));
   document.getElementById('hero-schedule')?.addEventListener('click', () => {
     showPage('home');
     setTimeout(() => document.getElementById('schedule')?.scrollIntoView({ behavior:'smooth', block:'start' }), 120);
   });
-  document.getElementById('pricing-apply')?.addEventListener('click', () => showPage('register'));
 
   /* Award filter (home) */
   document.querySelectorAll('.filter-btn').forEach(btn => {
