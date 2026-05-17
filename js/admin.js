@@ -4,15 +4,6 @@
    ═══════════════════════════════════════════════ */
 'use strict';
 
-/* =========================
-   ADMIN PASSWORD
-========================= */
-
-/*const ADMIN_PASSWORD = 'JIHANCEO';
-
-function isAdmin() {
-  return sessionStorage.getItem('wpsa_admin') === 'true';
-}*/
 
 const TICKET_LABELS = {
   award:    'Award Nomination',

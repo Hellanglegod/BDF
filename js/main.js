@@ -11,23 +11,6 @@ if (typeof DB !== 'undefined') {
   DB.isFirebase();
 }
 
-/* =========================
-   ADMIN ACCESS
-========================= */
-
-const ADMIN_EMAILS = [
-  'admin@womenpowersummit.in',
-  'organiser@womenpowersummit.in',
-  'kothari.jihan@gmail.com'
-];
-
-function isAdminUser(user) {
-  return !!user &&
-    ADMIN_EMAILS.includes(
-      (user.email || '').toLowerCase()
-    );
-}
-
 /* ═════════════════════════════════
    DATA
    ═════════════════════════════════ */
@@ -594,6 +577,11 @@ async function finaliseReg() {
   try {
     await DB.saveReg(reg);
     console.log('%c✅ Saved to Firebase!', 'color:#4caf50;font-weight:bold');
+    await DB.addLog({
+  email: reg.email,
+  action: 'registration_complete',
+  status: 'success'
+});
   } catch (e) {
     console.warn('Firebase save failed, using localStorage...', e);
     try {
@@ -605,11 +593,6 @@ async function finaliseReg() {
       console.error('All save attempts failed', e2);
     }
     
-    await DB.addLog({
-  email: reg.email,
-  action: 'registration_complete',
-  status: 'success'
-});
   }
 
   // Show success screen
@@ -621,7 +604,7 @@ async function finaliseReg() {
  if (reg.ticket === 'startup') {
   document.getElementById('pitch-panel').classList.add('show');
 }else if (reg.ticket === 'award') {
-  document.getElementById('award-submission').classList.add('show');  
+  document.getElementById('award-submission')?.classList.add('show');  
 }
 
   // FIX-5: keep currentReg so printReceipt/downloadReceiptTxt work after payment
@@ -737,53 +720,104 @@ function initPitchUpload() {
   zone.addEventListener('click', () => input.click());
   zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('over'); });
   zone.addEventListener('dragleave', () => zone.classList.remove('over'));
-  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('over'); addFiles([...e.dataTransfer.files]); });
-  input.addEventListener('change', () => addFiles([...input.files]));
+  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('over'); addFiles_pitch([...e.dataTransfer.files]); });
+  input.addEventListener('change', () => addFiles_pitch([...input.files]));
 }
 
-async function addFiles(files) {
-  files.forEach(f => {
-    const ext = '.' + f.name.split('.').pop().toLowerCase();
-    if (!PITCH_TYPES.includes(ext)) { alert(`"${ext}" not allowed. Accepted: ${PITCH_TYPES.join(', ')}`); return; }
-    if (f.size > PITCH_MAX_MB * 1024 * 1024) { alert(`Max file size is ${PITCH_MAX_MB} MB.`); return; }
-    if (pitchFiles.some(x => x.name === f.name)) return;
-    pitchFiles.push(f);
-  });
-  renderPitchFiles();
-  /* Update registration record in DB */
-  if (currentReg) {
+async function addFiles_pitch(files) {
+
+  for (const f of files) {
+
+    const ext =
+      '.' + f.name.split('.').pop().toLowerCase();
+
+    if (!PITCH_TYPES.includes(ext)) {
+
+      alert(
+        `"${ext}" not allowed.`
+      );
+
+      continue;
+    }
+
+    if (
+      f.size >
+      PITCH_MAX_MB * 1024 * 1024
+    ) {
+
+      alert(
+        `Max size is ${PITCH_MAX_MB}MB`
+      );
+
+      continue;
+    }
+
     try {
-      const uploaded = [];
 
-for (const file of pitchFiles) {
+      const formData = new FormData();
 
-  const ref = firebase
-    .storage()
-    .ref(
-      `pitch-decks/${currentReg.id}/${Date.now()}-${file.name}`
-    );
+      formData.append('file', f);
 
-  const snap = await ref.put(file);
+      formData.append(
+        'upload_preset',
+        'wpsa_unsigned'
+      );
 
-  const url = await snap.ref.getDownloadURL();
+      const response = await fetch(
+        'https://api.cloudinary.com/v1_1/dxwjvhxa7/auto/upload',
+        {
+          method: 'POST',
+          body: formData
+        }
+      );
 
-  uploaded.push({
-    name: file.name,
-    url,
-    size: file.size
-  });
+      const data = await response.json();
 
-}
+      console.log('Uploaded:', data);
 
-await DB.updateReg(
-  currentReg.id,
-  {
-    pitchFiles: uploaded
+      pitchFiles.push({
+        name: f.name,
+        size: f.size,
+        url: data.secure_url,
+        publicId: data.public_id
+      });
+
+    } catch (err) {
+
+      console.error(
+        'Upload failed',
+        err
+      );
+
+      alert(
+        'Upload failed'
+      );
+
+    }
+
   }
-);
-      await DB.addLog({ email: currentReg.email, action: 'pitch_upload', status: 'success', note: `${pitchFiles.length} file(s) for ${currentReg.id}` });
-    } catch (e) { console.error('[DB] Pitch update failed:', e); }
+
+  renderPitchFiles();
+
+  if (currentReg) {
+
+    try {
+
+      await DB.updateReg(
+        currentReg.id,
+        {
+          pitchFiles
+        }
+      );
+
+    } catch (e) {
+
+      console.error(e);
+
+    }
+
   }
+
 }
 
 function removePitchFile(i) {
@@ -798,7 +832,10 @@ function renderPitchFiles() {
   pitchFiles.forEach((f, i) => {
     const div = document.createElement('div');
     div.className = 'pitch-file';
-    div.innerHTML = `<div><div class="pitch-file-name">📎 ${f.name}</div><div class="pitch-file-size">${(f.size/1048576).toFixed(2)} MB</div></div><button class="pitch-file-del" onclick="removePitchFile(${i})">✕</button>`;
+    div.innerHTML = `<div><div class="pitch-file-name">📎
+    <a href="${f.url}" target="_blank">
+  ${f.name}
+</a></div><div class="pitch-file-size">${(f.size/1048576).toFixed(2)} MB</div></div><button class="pitch-file-del" onclick="removePitchFile(${i})">✕</button>`;
     list.appendChild(div);
   });
   const status = document.getElementById('pitch-status');
@@ -823,50 +860,89 @@ function initAwardUpload() {
   input.addEventListener('change', () => addFiles_awd([...input.files]));
 }
 
-async function addFiles_awd(files) {
-  files.forEach(f => {
-    const ext = '.' + f.name.split('.').pop().toLowerCase();
-    if (!AWARD_TYPES.includes(ext)) { alert(`"${ext}" not allowed. Accepted: ${AWARD_TYPES.join(', ')}`); return; }
-    if (f.size > AWARD_MAX_MB * 1024 * 1024) { alert(`Max file size is ${AWARD_MAX_MB} MB.`); return; }
-    if (AwardFiles.some(x => x.name === f.name)) return;
-    AwardFiles.push(f);
-  });
-  renderAwardFiles();
-  /* Update registration record in DB */
-  if (currentReg) {
+  async function addFiles_awd(files) {
+
+  for (const f of files) {
+
+    const ext =
+      '.' + f.name.split('.').pop().toLowerCase();
+
+    if (!AWARD_TYPES.includes(ext)) {
+      alert(`"${ext}" not allowed.`);
+      continue;
+    }
+
+    if (
+      f.size >
+      AWARD_MAX_MB * 1024 * 1024
+    ) {
+      alert(`Max size is ${AWARD_MAX_MB}MB`);
+      continue;
+    }
+
     try {
-      const uploaded = [];
 
-for (const file of AwardFiles) {
+      const formData = new FormData();
 
-  const ref = firebase
-    .storage()
-    .ref(
-      `award-decks/${currentReg.id}/${Date.now()}-${file.name}`
-    );
+      // ADD THIS
+      const safeName =
+        `${currentReg.id}-${Date.now()}-${f.name}`;
 
-  const snap = await ref.put(file);
+      formData.append('file', f);
 
-  const url = await snap.ref.getDownloadURL();
+      formData.append(
+        'public_id',
+        safeName
+      );
 
-  uploaded.push({
-    name: file.name,
-    url,
-    size: file.size
-  });
-
-}
-
-await DB.updateReg(
-  currentReg.id,
-  {
-    AwardFiles: uploaded
-  }
+      formData.append(
+  'folder',
+  'wpsa/award-presentations'
 );
-      await DB.addLog({ email: currentReg.email, action: 'Award_upload', status: 'success', note: `${AwardFiles.length} file(s) for ${currentReg.id}` });
-    } catch (e) { console.error('[DB] Presenteation update failed:', e); }
+
+      formData.append(
+        'upload_preset',
+        'wpsa_unsigned'
+      );
+
+      const response = await fetch(
+        'https://api.cloudinary.com/v1_1/dxwjvhxa7/auto/upload',
+        {
+          method: 'POST',
+          body: formData
+        }
+      );
+
+      const data = await response.json();
+
+      AwardFiles.push({
+        name: f.name,
+        size: f.size,
+        url: data.secure_url,
+        publicId: data.public_id
+      });
+
+    } catch (err) {
+
+      console.error('Upload failed', err);
+
+      alert('Upload failed');
+    }
+  }
+
+  renderAwardFiles();
+
+  if (currentReg) {
+
+    await DB.updateReg(
+      currentReg.id,
+      {
+        AwardFiles
+      }
+    );
   }
 }
+
 
 function removeAwardFile(i) {
   AwardFiles.splice(i, 1);
@@ -985,28 +1061,27 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (!DB.auth) throw new Error('Firebase Auth not configured');
       const cred = await firebase.auth().signInWithEmailAndPassword(email, password);
 
-const user = cred.user;
-if (!user.emailVerified) {
+      const user = cred.user;
+      if (!user.emailVerified) {
+        await firebase.auth().signOut();
+        showAuthErr('Please verify your email before signing in.');
+        return;
+      }
 
-  await firebase.auth().signOut();
+      sessionStorage.setItem('wpsa_user_email', user.email || '');
 
-  showAuthErr(
-    'Please verify your email before signing in.'
-  );
 
-  return;
+      const tokenResult = await user.getIdTokenResult(true);
+const isAdmin = tokenResult.claims.admin === true;
 
-}
+console.log('TOKEN CLAIMS:', tokenResult.claims);
 
-sessionStorage.setItem('wpsa_user_email', user.email || '');
-
-if (isAdminUser(user)) {
+if (isAdmin) {
   sessionStorage.setItem('wpsa_admin', 'true');
 } else {
   sessionStorage.removeItem('wpsa_admin');
 }
 
-// Small auth sync delay
 await new Promise(r => setTimeout(r, 300));
 
 try {
@@ -1014,53 +1089,41 @@ try {
     email,
     action: 'login',
     status: 'success',
-    note: isAdminUser(user)
+    note: isAdmin
       ? 'Admin signed in'
       : 'User signed in',
-    
   });
 } catch (err) {
-  console.error(
-  '🔥 FIRESTORE LOG ERROR:',
-  err.code,
-  err.message,
-  err
-);
+  console.warn('Login log failed:', err);
 }
-      closeAuth();
 
-/* =========================
-   ADMIN REDIRECT
-========================= */
+closeAuth();
 
-if (isAdminUser(user)) {
-
-  console.log('Admin detected → redirecting');
-
+if (isAdmin) {
   window.location.href = 'admin.html';
-
   return;
 }
 
-/* Normal users */
-
 showPage('register');
+
+      /* Normal users */
+      showPage('register');
     } catch (e) {
       showAuthErr(e?.message || 'Sign in failed. Please try again.');
       const emailFallback = (document.getElementById('auth-email')?.value || '').trim();
       try {
-  await DB.addLog({
-    email: emailFallback || 'unknown',
-    action: 'login',
-    status: 'failed',
-    note: (e && e.code) ? e.code : 'error',
-    
-  });
-} catch (err) {
-  console.warn('Failed login log failed:', err);
-}
+        await DB.addLog({
+          email: emailFallback || 'unknown',
+          action: 'login',
+          status: 'failed',
+          note: (e && e.code) ? e.code : 'error'
+        });
+      } catch (err) {
+        console.warn('Failed login log failed:', err);
+      }
     }
   };
+
 
   const signUp = async () => {
     clearAuthErr();
@@ -1076,6 +1139,8 @@ showPage('register');
       const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
       const u = cred.user;
       await u.sendEmailVerification();
+      /* ADD THIS */
+await firebase.auth().signOut();
       // Save user profile mirror into DB
       await DB.saveUser({
         uid: u.uid,
@@ -1100,7 +1165,10 @@ showPage('register');
 
       // After signup, proceed to sign in session
       closeAuth();
-      showPage('register');
+
+alert(
+  'Verification email sent. Please verify your email before signing in.'
+);
     } catch (e) {
       showAuthErr(e?.message || 'Create account failed.');
       try {
@@ -1235,20 +1303,19 @@ if (loader) {
       user.email || ''
     );
 
-    if (isAdminUser(user)) {
+    user.getIdTokenResult(true).then((token) => {
 
-      sessionStorage.setItem(
-        'wpsa_admin',
-        'true'
-      );
+  if (token.claims.admin === true) {
 
-    } else {
+    sessionStorage.setItem('wpsa_admin', 'true');
 
-      sessionStorage.removeItem(
-        'wpsa_admin'
-      );
+  } else {
 
-    }
+    sessionStorage.removeItem('wpsa_admin');
+
+  }
+
+});
 
     // Close auth modal
     if (authModal) {
@@ -1331,6 +1398,8 @@ await firebase.auth().signOut();
 
   }
 
+});
+
 async function loadUserRegistration(user) {
 
   if (!user?.email) return;
@@ -1374,8 +1443,6 @@ async function loadUserRegistration(user) {
 
 }
 
-});
-
 function showExistingRegistration(reg) {
 
   document.getElementById("reg-form-wrap").style.display = "none";
@@ -1385,6 +1452,12 @@ function showExistingRegistration(reg) {
   document.getElementById("receipt-wrap").classList.add("show");
 
   renderReceipt(reg);
+
+  pitchFiles = reg.pitchFiles || [];
+AwardFiles = reg.AwardFiles || [];
+
+renderPitchFiles();
+renderAwardFiles();
 
   if (reg.ticket === "startup" )
   {
