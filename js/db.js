@@ -6,8 +6,6 @@
    FIX-3  All timestamps stored as ISO strings
    FIX-4  Full localStorage fallback for every operation
    ═══════════════════════════════════════════════════ */
-
-   const storage = firebase.storage();
    
 /* ── localStorage helper ── */
 const LS = {
