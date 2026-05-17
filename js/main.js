@@ -367,6 +367,7 @@ function renderSocials() {
 let selTicket   = null;
 let selAwards   = [];
 let pitchFiles  = [];
+let AwardFiles  = [];
 let currentReg  = null;
 let selPayMethod = 'upi';
 
@@ -584,6 +585,7 @@ async function finaliseReg() {
   reg.payMethod = selPayMethod || 'upi';
   reg.checkedIn = false;
   reg.pitchFiles = [];
+  reg.AwardFiles = [];
   reg.timestamp = new Date().toISOString();
 
   console.log('💾 Saving registration...', reg);
@@ -616,8 +618,10 @@ async function finaliseReg() {
   renderReceipt(reg);
   document.getElementById('receipt-wrap').classList.add('show');
 
- if (reg.ticket === 'startup' || reg.ticket === 'award') {
+ if (reg.ticket === 'startup') {
   document.getElementById('pitch-panel').classList.add('show');
+}else if (reg.ticket === 'award') {
+  document.getElementById('award-submission').classList.add('show');  
 }
 
   // FIX-5: keep currentReg so printReceipt/downloadReceiptTxt work after payment
@@ -720,15 +724,15 @@ function downloadReceiptTxt() {
 }
 
 /* ═════════════════════════════════
-   PITCH UPLOAD
+   PITCH UPLOAD {only for startup/award ticket holders}{duplicate for awardees to upload for their categories}
    ═════════════════════════════════ */
 
 const PITCH_TYPES = ['.pdf','.ppt','.pptx','.key','.odp','.pps','.ppsx'];
 const PITCH_MAX_MB = 50;
 
 function initPitchUpload() {
-  const zone  = document.getElementById('drop-zone');
-  const input = document.getElementById('pitch-input');
+  const zone  = document.getElementById('drop-zone-pip');
+  const input = document.getElementById('pitch-input-pip');
   if (!zone || !input) return;
   zone.addEventListener('click', () => input.click());
   zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('over'); });
@@ -772,6 +776,61 @@ function renderPitchFiles() {
   });
   const status = document.getElementById('pitch-status');
   if (status) status.textContent = pitchFiles.length > 0 ? `✅ ${pitchFiles.length} file(s) ready to submit` : '';
+}
+
+/* ═════════════════════════════════
+   AWARD UPLOAD 
+   ═════════════════════════════════ */
+
+const AWARD_TYPES = ['.pdf','.ppt','.pptx','.key','.odp','.pps','.ppsx'];
+const AWARD_MAX_MB = 50;
+
+function initAwardUpload() {
+  const zone  = document.getElementById('drop-zone-awd');
+  const input = document.getElementById('pitch-input-awd');
+  if (!zone || !input) return;
+  zone.addEventListener('click', () => input.click());
+  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('over'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('over'));
+  zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('over'); addFiles_awd([...e.dataTransfer.files]); });
+  input.addEventListener('change', () => addFiles_awd([...input.files]));
+}
+
+async function addFiles_awd(files) {
+  files.forEach(f => {
+    const ext = '.' + f.name.split('.').pop().toLowerCase();
+    if (!AWARD_TYPES.includes(ext)) { alert(`"${ext}" not allowed. Accepted: ${AWARD_TYPES.join(', ')}`); return; }
+    if (f.size > AWARD_MAX_MB * 1024 * 1024) { alert(`Max file size is ${AWARD_MAX_MB} MB.`); return; }
+    if (AwardFiles.some(x => x.name === f.name)) return;
+    AwardFiles.push(f);
+  });
+  renderAwardFiles();
+  /* Update registration record in DB */
+  if (currentReg) {
+    try {
+      await DB.updateReg(currentReg.id, { AwardFiles: AwardFiles.map(f => f.name) });
+      await DB.addLog({ email: currentReg.email, action: 'Award_upload', status: 'success', note: `${AwardFiles.length} file(s) for ${currentReg.id}` });
+    } catch (e) { console.error('[DB] Presenteation update failed:', e); }
+  }
+}
+
+function removeAwardFile(i) {
+  AwardFiles.splice(i, 1);
+  renderAwardFiles();
+}
+
+function renderAwardFiles() {
+  const list = document.getElementById('award-file-list');
+  if (!list) return;
+  list.innerHTML = '';
+  AwardFiles.forEach((f, i) => {
+    const div = document.createElement('div');
+    div.className = 'pitch-file';
+    div.innerHTML = `<div><div class="award-file-name">📎 ${f.name}</div><div class="award-file-size">${(f.size/1048576).toFixed(2)} MB</div></div><button class="award-file-del" onclick="removeAwardFile(${i})">✕</button>`;
+    list.appendChild(div);
+  });
+  const status = document.getElementById('award-status');
+  if (status) status.textContent = AwardFiles.length > 0 ? `✅ ${AwardFiles.length} file(s) ready to submit` : '';
 }
 
 /* ═════════════════════════════════
@@ -1054,6 +1113,7 @@ showPage('register');
   startCountdown();
   initTicketCards();
   initPitchUpload();
+  initAwardUpload();
   updateAwardStep();
   updateSummary();
 
@@ -1238,14 +1298,16 @@ function showExistingRegistration(reg) {
 
   renderReceipt(reg);
 
-  if (
-    reg.ticket === "startup" ||
-    reg.ticket === "award"
-  ) {
+  if (reg.ticket === "startup" )
+  {
 
     document.getElementById("pitch-panel")
       ?.classList.add("show");
 
+  }else if(reg.ticket === "award")
+  {
+    document.getElementById("award-submission")
+      ?.classList.add("show");
   }
 
 }

@@ -759,14 +759,32 @@
         <span class="eyebrow" style="margin-bottom:8px;">PitchPower — Next Step</span>
         <h3 style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:600;color:var(--white);margin-bottom:10px;">Upload Your Pitch Deck</h3>
         <p style="font-size:.9375rem;color:var(--txt2);margin-bottom:20px;line-height:1.7;">Upload your startup pitch presentation so it is available for investor panel review ahead of 23rd May. Accepted formats: <strong style="color:var(--gold);">.pdf · .ppt · .pptx · .key · .odp · .pps</strong> · Max 50 MB per file.</p>
-        <div class="drop-zone" id="drop-zone">
-          <span class="drop-icon">📤</span>
-          <div class="drop-main">Drag &amp; drop your pitch deck here</div>
-          <div class="drop-sub">or click to browse files</div>
+        <div class="drop-zone-pip" id="drop-zone-pip">
+          <span class="drop-icon-pip">📤</span>
+          <div class="drop-main-pip">Drag &amp; drop your pitch deck here</div>
+          <div class="drop-sub-pip">or click to browse files</div>
         </div>
         <input type="file" id="pitch-input" accept=".pdf,.ppt,.pptx,.key,.odp,.pps,.ppsx" multiple style="display:none;"/>
         <div class="pitch-files" id="pitch-file-list"></div>
         <p class="pitch-status" id="pitch-status"></p>
+        <p style="font-size:.8125rem;color:var(--txt4);margin-top:14px;">Upload deadline: 15th May 2026. You will receive a confirmation once your submission is reviewed by the team.</p>
+      </div>
+    </div>
+    <!--Awardee Upload-->
+    <div class="award-submission" id="award-submission">
+      <div class="award-box">
+        <div class="ornament orn-sm" style="margin-bottom:18px;"><span class="orn-line"></span><span class="orn-dot"></span><span class="orn-line r"></span></div>
+        <span class="eyebrow" style="margin-bottom:8px;">Award Presentation — Next Step</span>
+        <h3 style="font-family:'Playfair Display',serif;font-size:1.4rem;font-weight:600;color:var(--white);margin-bottom:10px;">Upload Your Presentation</h3>
+        <p style="font-size:.9375rem;color:var(--txt2);margin-bottom:20px;line-height:1.7;">Upload your presentation so it is available for jury panel review ahead of 23rd May. Accepted formats: <strong style="color:var(--gold);">.pdf · .ppt · .pptx · .key · .odp · .pps</strong> · Max 50 MB per file.</p>
+        <div class="drop-zone-awd" id="drop-zone-awd">
+          <span class="drop-icon-awd">📤</span>
+          <div class="drop-main-awd">Drag &amp; drop your presentation here</div>
+          <div class="drop-sub-awd">or click to browse files</div>
+        </div>
+        <input type="file" id="award-input" accept=".pdf,.ppt,.pptx,.key,.odp,.pps,.ppsx" multiple style="display:none;"/>
+        <div class="award-files" id="award-file-list"></div>
+        <p class="award-status" id="award-status"></p>
         <p style="font-size:.8125rem;color:var(--txt4);margin-top:14px;">Upload deadline: 15th May 2026. You will receive a confirmation once your submission is reviewed by the team.</p>
       </div>
     </div>

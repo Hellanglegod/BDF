@@ -538,17 +538,33 @@ small { font-size: 0.8125rem; }
 .pitch-panel { display: none; margin-top: 32px; }
 .pitch-panel.show { display: block; }
 .pitch-box { border: 1px solid var(--gold-md); border-radius: var(--r-lg); padding: 28px; background: rgba(201,149,42,0.04); }
-.drop-zone { border: 2px dashed var(--gold-lt); border-radius: var(--r-lg); padding: 40px 24px; text-align: center; cursor: pointer; transition: all var(--tr); }
-.drop-zone:hover, .drop-zone.over { border-color: var(--gold); background: rgba(201,149,42,0.07); }
-.drop-icon { font-size: 2.5rem; margin-bottom: 12px; display: block; }
-.drop-main { font-size: 1rem; font-weight: 500; color: var(--txt); margin-bottom: 5px; }
-.drop-sub { font-size: 0.875rem; color: var(--txt4); }
+.drop-zone-pip { border: 2px dashed var(--gold-lt); border-radius: var(--r-lg); padding: 40px 24px; text-align: center; cursor: pointer; transition: all var(--tr); }
+.drop-zone-pip:hover, .drop-zone-pip.over { border-color: var(--gold); background: rgba(201,149,42,0.07); }
+.drop-icon-pip { font-size: 2.5rem; margin-bottom: 12px; display: block; }
+.drop-main-pip { font-size: 1rem; font-weight: 500; color: var(--txt); margin-bottom: 5px; }
+.drop-sub-pip { font-size: 0.875rem; color: var(--txt4); }
 .pitch-files { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
 .pitch-file { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: rgba(201,149,42,0.08); border: 1px solid var(--gold-md); border-radius: var(--r); }
 .pitch-file-name { font-size: 0.9375rem; font-weight: 500; color: var(--white); }
 .pitch-file-size { font-size: 0.8125rem; color: var(--txt3); margin-top: 2px; }
 .pitch-file-del { background: none; border: none; color: var(--red); font-size: 1.2rem; cursor: pointer; padding: 4px; }
 .pitch-status { font-size: 0.875rem; font-weight: 600; color: var(--green); margin-top: 12px; }
+
+/* ── PITCH UPLOAD ── */
+.award-submission { display: none; margin-top: 32px; }
+.award-submission.show { display: block; }
+.award-box { border: 1px solid var(--gold-md); border-radius: var(--r-lg); padding: 28px; background: rgba(201,149,42,0.04); }
+.drop-zone-awd { border: 2px dashed var(--gold-lt); border-radius: var(--r-lg); padding: 40px 24px; text-align: center; cursor: pointer; transition: all var(--tr); }
+.drop-zone-awd:hover, .drop-zone-awd.over { border-color: var(--gold); background: rgba(201,149,42,0.07); }
+.drop-icon-awd { font-size: 2.5rem; margin-bottom: 12px; display: block; }
+.drop-main-awd { font-size: 1rem; font-weight: 500; color: var(--txt); margin-bottom: 5px; }
+.drop-sub-awd { font-size: 0.875rem; color: var(--txt4); }
+.award-files { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; }
+.award-file { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; background: rgba(201,149,42,0.08); border: 1px solid var(--gold-md); border-radius: var(--r); }
+.award-file-name { font-size: 0.9375rem; font-weight: 500; color: var(--white); }
+.award-file-size { font-size: 0.8125rem; color: var(--txt3); margin-top: 2px; }
+.award-file-del { background: none; border: none; color: var(--red); font-size: 1.2rem; cursor: pointer; padding: 4px; }
+.award-status { font-size: 0.875rem; font-weight: 600; color: var(--green); margin-top: 12px; }
 
 /* ── SUCCESS ── */
 .success-state { display: none; text-align: center; padding: clamp(40px,8vw,72px) 24px; }
