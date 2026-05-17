@@ -21,7 +21,4 @@ window.auth = auth;
 window.db = db;
 window.storage = storage;
 
-const ADMIN_PASS = "JIHANCEO123";
-window.ADMIN_PASS = ADMIN_PASS;
-
 console.log("✅ Firebase initialized correctly");

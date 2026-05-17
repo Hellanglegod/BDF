@@ -1,54 +1,56 @@
 rules_version = '2';
 
 service cloud.firestore {
+
   match /databases/{database}/documents {
 
-    /* ─────────────────────────────
-       REGISTRATIONS
-    ───────────────────────────── */
-    match /registrations/{id} {
-
-      // Public registration creation
-      allow create: if true;
-
-      // Read/update/delete only for signed-in admins
-      allow read, update, delete: if request.auth != null;
+    function signedIn() {
+      return request.auth != null;
     }
 
-    /* ─────────────────────────────
-       USERS
-    ───────────────────────────── */
-    match /users/{uid} {
-
-      // User can create/update own profile
-      allow create, update: if request.auth != null
-        && request.auth.uid == uid;
-
-      // Admin read access
-      allow read: if request.auth != null;
-
-      // Optional delete
-      allow delete: if request.auth != null;
+    function isAdmin() {
+      return signedIn() &&
+        request.auth.token.email in [
+          "admin@womenpowersummit.in",
+          "organiser@womenpowersummit.in",
+          "kothari.jihan@gmail.com"
+        ];
     }
 
-    /* ─────────────────────────────
-       LOGIN LOGS
-    ───────────────────────────── */
-    match /loginLogs/{id} {
+    match /registrations/{docId} {
 
-      // Anyone can write logs
-      allow create: if true;
+      allow create: if signedIn();
 
-      // Only signed-in admins can read/delete
-      allow read, delete: if request.auth != null;
+      allow read: if signedIn();
+
+      allow update: if signedIn();
+
+      allow delete: if isAdmin();
+
     }
 
-    /* ─────────────────────────────
-       SETTINGS
-    ───────────────────────────── */
-    match /settings/{id} {
+    match /users/{userId} {
 
-      allow read, write: if request.auth != null;
+      allow create: if signedIn();
+
+      allow read: if signedIn();
+
+      allow update: if signedIn();
+
+      allow delete: if false;
+
     }
+
+    match /logs/{logId} {
+
+      allow create: if signedIn();
+
+      allow read: if isAdmin();
+
+      allow update, delete: if false;
+
+    }
+
   }
+
 }

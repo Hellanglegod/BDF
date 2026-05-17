@@ -753,7 +753,34 @@ async function addFiles(files) {
   /* Update registration record in DB */
   if (currentReg) {
     try {
-      await DB.updateReg(currentReg.id, { pitchFiles: pitchFiles.map(f => f.name) });
+      const uploaded = [];
+
+for (const file of pitchFiles) {
+
+  const ref = firebase
+    .storage()
+    .ref(
+      `pitch-decks/${currentReg.id}/${Date.now()}-${file.name}`
+    );
+
+  const snap = await ref.put(file);
+
+  const url = await snap.ref.getDownloadURL();
+
+  uploaded.push({
+    name: file.name,
+    url,
+    size: file.size
+  });
+
+}
+
+await DB.updateReg(
+  currentReg.id,
+  {
+    pitchFiles: uploaded
+  }
+);
       await DB.addLog({ email: currentReg.email, action: 'pitch_upload', status: 'success', note: `${pitchFiles.length} file(s) for ${currentReg.id}` });
     } catch (e) { console.error('[DB] Pitch update failed:', e); }
   }
@@ -808,7 +835,34 @@ async function addFiles_awd(files) {
   /* Update registration record in DB */
   if (currentReg) {
     try {
-      await DB.updateReg(currentReg.id, { AwardFiles: AwardFiles.map(f => f.name) });
+      const uploaded = [];
+
+for (const file of AwardFiles) {
+
+  const ref = firebase
+    .storage()
+    .ref(
+      `award-decks/${currentReg.id}/${Date.now()}-${file.name}`
+    );
+
+  const snap = await ref.put(file);
+
+  const url = await snap.ref.getDownloadURL();
+
+  uploaded.push({
+    name: file.name,
+    url,
+    size: file.size
+  });
+
+}
+
+await DB.updateReg(
+  currentReg.id,
+  {
+    AwardFiles: uploaded
+  }
+);
       await DB.addLog({ email: currentReg.email, action: 'Award_upload', status: 'success', note: `${AwardFiles.length} file(s) for ${currentReg.id}` });
     } catch (e) { console.error('[DB] Presenteation update failed:', e); }
   }
@@ -932,6 +986,17 @@ document.addEventListener('DOMContentLoaded', async () => {
       const cred = await firebase.auth().signInWithEmailAndPassword(email, password);
 
 const user = cred.user;
+if (!user.emailVerified) {
+
+  await firebase.auth().signOut();
+
+  showAuthErr(
+    'Please verify your email before signing in.'
+  );
+
+  return;
+
+}
 
 sessionStorage.setItem('wpsa_user_email', user.email || '');
 
@@ -1010,7 +1075,7 @@ showPage('register');
       if (!DB.auth) throw new Error('Firebase Auth not configured');
       const cred = await firebase.auth().createUserWithEmailAndPassword(email, password);
       const u = cred.user;
-
+      await u.sendEmailVerification();
       // Save user profile mirror into DB
       await DB.saveUser({
         uid: u.uid,
@@ -1153,6 +1218,13 @@ firebase.auth().onAuthStateChanged((user) => {
   const userEmail = document.querySelector('#user-email');
   const logoutBtn = document.querySelector('#logout-btn');
   const authModal = document.querySelector('#auth-modal');
+  
+  const loader =
+  document.getElementById('auth-loading');
+
+if (loader) {
+  loader.style.display = 'none';
+}
 
   if (user) {
 
@@ -1207,7 +1279,13 @@ firebase.auth().onAuthStateChanged((user) => {
 
         try {
 
-          await firebase.auth().signOut();
+          const ok = confirm(
+  'Are you sure you want to logout?'
+);
+
+if (!ok) return;
+
+await firebase.auth().signOut();
 
           sessionStorage.removeItem('wpsa_admin');
           sessionStorage.removeItem('wpsa_user_email');

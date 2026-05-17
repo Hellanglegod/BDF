@@ -7,6 +7,8 @@
    FIX-4  Full localStorage fallback for every operation
    ═══════════════════════════════════════════════════ */
 
+   const storage = firebase.storage();
+   
 /* ── localStorage helper ── */
 const LS = {
   get:    k      => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },

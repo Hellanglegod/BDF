@@ -60,10 +60,15 @@ _showApp();
     }
   } else {
     // localStorage fallback — check ADMIN_PASS from firebase-config.js
-    if (typeof ADMIN_PASS !== 'undefined' && pass === ADMIN_PASS) {
+    if (
+  user &&
+  ADMIN_EMAILS.includes(
+    (user.email || '').toLowerCase()
+  )
+) {
       _showApp();
     } else {
-      _showErr('Incorrect password.');
+      _showErr('Incorrect email or password.');
     }
   }
 
