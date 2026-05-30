@@ -11,7 +11,7 @@ serviceAccountKey.json
 .env
 .DS_Store
 Thumbs.db
-js\set-admin.js
+set-admin.js
 # Firebase cache
 .firebase/
 
