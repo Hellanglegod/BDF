@@ -1,0 +1,24 @@
+{
+  "name": "bdf",
+  "version": "1.0.0",
+  "description": "**11th Annual Edition — 23rd May 2026 · NSE, Bandra Kurla Complex, Mumbai**\r Powered by [Billennium Divas](https://www.billenniumdivas.fund)",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Hellanglegod/BDF.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Hellanglegod/BDF/issues"
+  },
+  "homepage": "https://github.com/Hellanglegod/BDF#readme",
+  "dependencies": {
+    "firebase-admin": "^13.10.0"
+  }
+}

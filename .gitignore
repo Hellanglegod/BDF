@@ -6,7 +6,11 @@ yarn-debug.log*
 yarn-error.log*
 firebase-debug.log*
 firebase-debug.*.log*
-
+node_modules/
+serviceAccountKey.json
+.env
+.DS_Store
+Thumbs.db
 # Firebase cache
 .firebase/
 
