@@ -5,7 +5,7 @@ window.FIREBASE_CONFIG = {
   storageBucket: "wpsa2026.firebasestorage.app",
   messagingSenderId: "520552769766",
   appId: "1:520552769766:web:b9836ab33d03292c05f327",
-  measurementId: "G-V8LK7CHGEJ"
+  measurementId: "G-V8LK7CHGEJ",
 };
 
 /* FIX */
