@@ -11,11 +11,15 @@ service cloud.firestore {
 
     match /registrations/{doc} {
 
-     allow read: if isAdmin();
+  allow create: if request.auth != null;
 
-     allow create: if request.auth != null;
+  allow read: if isAdmin()
+  || (
+    request.auth != null &&
+    resource.data.uid == request.auth.uid
+  );
 
-     allow update, delete: if isAdmin();
+  allow update, delete: if isAdmin();
 
 }
 

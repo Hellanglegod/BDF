@@ -401,7 +401,7 @@ const SOCIALS = [
 
 /* These thin wrappers keep the rest of main.js unchanged */
 async function _getRegs() {
-  return DB.getRegs();
+  return DB.getMyRegistration(user.email);
 }
 async function _saveReg(reg) {
   return DB.saveReg(reg);
@@ -965,6 +965,19 @@ function downloadReceiptTxt() {
   a.click();
 }
 
+let pendingAwardFiles = [];
+let pendingPitchFiles = [];
+
+async function addFiles_awd(files) {
+  pendingAwardFiles.push(...files);
+  renderAwardFiles();
+}
+
+async function addFiles_pitch(files) {
+  pendingPitchFiles.push(...files);
+  renderPitchFiles();
+}
+
 /* ═════════════════════════════════
    PITCH UPLOAD {only for startup/award ticket holders}{duplicate for awardees to upload for their categories}
    ═════════════════════════════════ */
@@ -974,7 +987,7 @@ const PITCH_MAX_MB = 50;
 
 function initPitchUpload() {
   const zone = document.getElementById("drop-zone-pip");
-  const input = document.getElementById("pitch-input-pip");
+  const input = document.getElementById("pitch-input");
   if (!zone || !input) return;
   zone.addEventListener("click", () => input.click());
   zone.addEventListener("dragover", (e) => {
@@ -990,66 +1003,7 @@ function initPitchUpload() {
   input.addEventListener("change", () => addFiles_pitch([...input.files]));
 }
 
-async function addFiles_pitch(files) {
-  for (const f of files) {
-    const ext = "." + f.name.split(".").pop().toLowerCase();
-
-    if (!PITCH_TYPES.includes(ext)) {
-      alert(`"${ext}" not allowed.`);
-
-      continue;
-    }
-
-    if (f.size > PITCH_MAX_MB * 1024 * 1024) {
-      alert(`Max size is ${PITCH_MAX_MB}MB`);
-
-      continue;
-    }
-
-    try {
-      const formData = new FormData();
-
-      formData.append("file", f);
-
-      formData.append("upload_preset", "wpsa_unsigned");
-
-      const response = await fetch(
-        "https://api.cloudinary.com/v1_1/dxwjvhxa7/auto/upload",
-        {
-          method: "POST",
-          body: formData,
-        },
-      );
-
-      const data = await response.json();
-
-      console.log("Uploaded:", data);
-
-      pitchFiles.push({
-        name: f.name,
-        size: f.size,
-        url: data.secure_url,
-        publicId: data.public_id,
-      });
-    } catch (err) {
-      console.error("Upload failed", err);
-
-      alert("Upload failed");
-    }
-  }
-
-  renderPitchFiles();
-
-  if (currentReg) {
-    try {
-      await DB.updateReg(currentReg.id, {
-        pitchFiles,
-      });
-    } catch (e) {
-      console.error(e);
-    }
-  }
-}
+renderPitchFiles();
 
 function removePitchFile(i) {
   pitchFiles.splice(i, 1);
@@ -1059,22 +1013,39 @@ function removePitchFile(i) {
 function renderPitchFiles() {
   const list = document.getElementById("pitch-file-list");
   if (!list) return;
+
   list.innerHTML = "";
+
   pitchFiles.forEach((f, i) => {
     const div = document.createElement("div");
     div.className = "pitch-file";
-    div.innerHTML = `<div><div class="pitch-file-name">📎
-    <a href="${f.url}" target="_blank">
-  ${f.name}
-</a></div><div class="pitch-file-size">${(f.size / 1048576).toFixed(2)} MB</div></div><button class="pitch-file-del" onclick="removePitchFile(${i})">✕</button>`;
+
+    const fileName = f.url
+      ? `<a href="${f.url}" target="_blank">${f.name}</a>`
+      : f.name;
+
+    div.innerHTML = `
+      <div>
+        <div class="pitch-file-name">📎 ${fileName}</div>
+        <div class="pitch-file-size">
+          ${(f.size / 1048576).toFixed(2)} MB
+        </div>
+      </div>
+      <button class="pitch-file-del"
+        onclick="removePitchFile(${i})">✕</button>
+    `;
+
     list.appendChild(div);
   });
+
   const status = document.getElementById("pitch-status");
-  if (status)
+
+  if (status) {
     status.textContent =
       pitchFiles.length > 0
-        ? `✅ ${pitchFiles.length} file(s) ready to submit`
+        ? `📎 ${pitchFiles.length} file(s) selected. Click Submit to upload.`
         : "";
+  }
 }
 
 /* ═════════════════════════════════
@@ -1086,7 +1057,7 @@ const AWARD_MAX_MB = 50;
 
 function initAwardUpload() {
   const zone = document.getElementById("drop-zone-awd");
-  const input = document.getElementById("pitch-input-awd");
+  const input = document.getElementById("award-input");
   if (!zone || !input) return;
   zone.addEventListener("click", () => input.click());
   zone.addEventListener("dragover", (e) => {
@@ -1102,8 +1073,103 @@ function initAwardUpload() {
   input.addEventListener("change", () => addFiles_awd([...input.files]));
 }
 
-async function addFiles_awd(files) {
-  for (const f of files) {
+renderAwardFiles();
+
+function removeAwardFile(i) {
+  AwardFiles.splice(i, 1);
+  renderAwardFiles();
+}
+
+function renderAwardFiles() {
+  const list = document.getElementById("award-file-list");
+  if (!list) return;
+
+  list.innerHTML = "";
+
+  AwardFiles.forEach((f, i) => {
+    const div = document.createElement("div");
+    div.className = "pitch-file";
+
+    div.innerHTML = `
+      <div>
+        <div class="award-file-name">
+          📎
+          <a href="${f.url}" target="_blank">
+            ${f.name}
+          </a>
+        </div>
+
+        <div class="award-file-size">
+          ${(f.size / 1048576).toFixed(2)} MB
+        </div>
+      </div>
+
+      <button
+        class="award-file-del"
+        onclick="removeAwardFile(${i})"
+      >
+        ✕
+      </button>
+    `;
+
+    list.appendChild(div);
+  });
+
+  const status = document.getElementById("award-status");
+
+  if (status) {
+    status.textContent =
+      AwardFiles.length > 0
+        ? `☁️ ${AwardFiles.length} file(s) uploaded successfully`
+        : "";
+  }
+}
+
+/* ═════════════════════════════════
+   MOBILE NAV HAMBURGER
+   ═════════════════════════════════ */
+
+function initMobileNav() {
+  const hamburger = document.getElementById("nav-hamburger");
+  const mobileMenu = document.getElementById("nav-mobile-menu");
+  if (!hamburger || !mobileMenu) return;
+  hamburger.addEventListener("click", () => {
+    hamburger.classList.toggle("open");
+    mobileMenu.classList.toggle("open");
+  });
+  document.querySelectorAll(".nav-mobile-link").forEach((link) => {
+    link.addEventListener("click", () => {
+      showPage(link.dataset.page);
+      document
+        .querySelectorAll(".nav-mobile-link")
+        .forEach((l) => l.classList.remove("active"));
+      link.classList.add("active");
+    });
+  });
+}
+
+async function submitAwardFiles() {
+  if (!currentReg) return;
+
+  const status = document.getElementById("award-status");
+
+  try {
+    await DB.updateReg(currentReg.id, {
+      AwardFiles,
+    });
+
+    if (status) {
+      status.textContent = "✅ Award Presentation submitted successfully";
+    }
+  } catch (e) {
+    console.error(e);
+
+    if (status) {
+      status.textContent = "❌ Submission failed";
+    }
+  }
+
+  for (const f of pendingAwardFiles) {
     const ext = "." + f.name.split(".").pop().toLowerCase();
 
     if (!AWARD_TYPES.includes(ext)) {
@@ -1151,60 +1217,98 @@ async function addFiles_awd(files) {
 
       alert("Upload failed");
     }
+
+    renderAwardFiles();
   }
 
-  renderAwardFiles();
+  await DB.updateReg(currentReg.id, {
+    AwardFiles,
+  });
+}
+async function submitPitchFiles() {
+  if (!currentReg) return;
 
-  if (currentReg) {
+  const status = document.getElementById("pitch-status");
+
+  try {
     await DB.updateReg(currentReg.id, {
-      AwardFiles,
+      PitchFiles,
     });
+
+    if (status) {
+      status.textContent = "✅ Pitch deck submitted successfully";
+    }
+  } catch (e) {
+    console.error(e);
+
+    if (status) {
+      status.textContent = "❌ Submission failed";
+    }
   }
-}
 
-function removeAwardFile(i) {
-  AwardFiles.splice(i, 1);
-  renderAwardFiles();
-}
+  for (const f of pendingPitchFiles) {
+    const ext = "." + f.name.split(".").pop().toLowerCase();
 
-function renderAwardFiles() {
-  const list = document.getElementById("award-file-list");
-  if (!list) return;
-  list.innerHTML = "";
-  AwardFiles.forEach((f, i) => {
-    const div = document.createElement("div");
-    div.className = "pitch-file";
-    div.innerHTML = `<div><div class="award-file-name">📎 ${f.name}</div><div class="award-file-size">${(f.size / 1048576).toFixed(2)} MB</div></div><button class="award-file-del" onclick="removeAwardFile(${i})">✕</button>`;
-    list.appendChild(div);
-  });
-  const status = document.getElementById("award-status");
-  if (status)
-    status.textContent =
-      AwardFiles.length > 0
-        ? `✅ ${AwardFiles.length} file(s) ready to submit`
-        : "";
-}
+    if (!PITCH_TYPES.includes(ext)) {
+      alert(`"${ext}" not allowed.`);
 
-/* ═════════════════════════════════
-   MOBILE NAV HAMBURGER
-   ═════════════════════════════════ */
+      continue;
+    }
 
-function initMobileNav() {
-  const hamburger = document.getElementById("nav-hamburger");
-  const mobileMenu = document.getElementById("nav-mobile-menu");
-  if (!hamburger || !mobileMenu) return;
-  hamburger.addEventListener("click", () => {
-    hamburger.classList.toggle("open");
-    mobileMenu.classList.toggle("open");
-  });
-  document.querySelectorAll(".nav-mobile-link").forEach((link) => {
-    link.addEventListener("click", () => {
-      showPage(link.dataset.page);
-      document
-        .querySelectorAll(".nav-mobile-link")
-        .forEach((l) => l.classList.remove("active"));
-      link.classList.add("active");
-    });
+    if (f.size > PITCH_MAX_MB * 1024 * 1024) {
+      alert(`Max size is ${PITCH_MAX_MB}MB`);
+
+      continue;
+    }
+
+    try {
+      const formData = new FormData();
+
+      const safeName = `${currentReg.id}-${Date.now()}-${f.name}`;
+
+      formData.append("file", f);
+
+      formData.append("public_id", safeName);
+
+      formData.append("folder", "wpsa/pitch-deck");
+
+      formData.append("upload_preset", "wpsa_unsigned");
+
+      const response = await fetch(
+        "https://api.cloudinary.com/v1_1/dxwjvhxa7/auto/upload",
+        {
+          method: "POST",
+          body: formData,
+        },
+      );
+
+      const data = await response.json();
+
+      console.log("Uploaded:", data);
+
+      pitchFiles.push({
+        name: f.name,
+        size: f.size,
+        url: data.secure_url,
+        publicId: data.public_id,
+      });
+
+      renderPitchFiles();
+
+      const status = document.getElementById("pitch-status");
+
+      if (status) {
+        status.textContent = `☁️ ${pitchFiles.length} file(s) uploaded successfully`;
+      }
+    } catch (err) {
+      console.error("Upload failed", err);
+
+      alert("Upload failed");
+    }
+  }
+
+  await DB.updateReg(currentReg.id, {
+    pitchFiles,
   });
 }
 
@@ -1555,8 +1659,12 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   /* Register submit */
   document
-    .getElementById("submit-btn")
-    ?.addEventListener("click", handleSubmit);
+    .getElementById("award-submit-btn")
+    ?.addEventListener("click", submitAwardFiles);
+
+  document
+    .getElementById("pitch-submit-btn")
+    ?.addEventListener("click", submitPitchFiles);
 
   /* Payment methods */
   document
@@ -1683,17 +1791,10 @@ document.addEventListener("DOMContentLoaded", async () => {
       if (!user?.email) return;
 
       try {
-        const regs = await DB.getRegs();
-
-        const reg = regs
-          .filter(
-            (r) => (r.email || "").toLowerCase() === user.email.toLowerCase(),
-          )
-          .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))[0];
+        const reg = await DB.getMyRegistration(user.email);
 
         if (!reg) {
           console.log("No registration found");
-
           return;
         }
 
