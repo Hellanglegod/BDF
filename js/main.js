@@ -1075,9 +1075,29 @@ function initAwardUpload() {
 
 renderAwardFiles();
 
-function removeAwardFile(i) {
-  AwardFiles.splice(i, 1);
-  renderAwardFiles();
+async function removeAwardFile(i) {
+  const file = AwardFiles[i];
+
+  console.log("Deleting:", file.publicId);
+
+  const res = await fetch("/api/delete-file", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      publicId: file.publicId,
+    }),
+  });
+
+  const data = await res.json();
+
+  console.log("Delete response:", data);
+
+  if (res.ok) {
+    AwardFiles.splice(i, 1);
+    renderAwardFiles();
+  }
 }
 
 function renderAwardFiles() {
