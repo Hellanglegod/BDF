@@ -1005,11 +1005,22 @@ function initPitchUpload() {
 
 renderPitchFiles();
 
-function removePitchFile(i) {
-  pitchFiles.splice(i, 1);
-  renderPitchFiles();
-}
+async function removePitchFile(i) {
+  const file = PitchFiles[i];
 
+  console.log("Deleting:", file.publicId);
+
+  const res = await fetch("/api/delete-file", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      publicId: file.publicId,
+      secret: "wpsa-delete-2026-8f4j9x2k1m",
+    }),
+  });
+}
 function renderPitchFiles() {
   const list = document.getElementById("pitch-file-list");
   if (!list) return;
@@ -1087,9 +1098,9 @@ async function removeAwardFile(i) {
     },
     body: JSON.stringify({
       publicId: file.publicId,
+      secret: "wpsa-delete-2026-8f4j9x2k1m",
     }),
   });
-
   const data = await res.json();
 
   console.log("Delete response:", data);
