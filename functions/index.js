@@ -1,5 +1,5 @@
-const { onCall } = require("firebase-functions/v2/https");
-const { setGlobalOptions } = require("firebase-functions/v2");
+const {onCall} = require("firebase-functions/v2/https");
+const {setGlobalOptions} = require("firebase-functions/v2");
 const admin = require("firebase-admin");
 const cloudinary = require("cloudinary").v2;
 
@@ -17,26 +17,32 @@ cloudinary.config({
 });
 
 exports.deleteCloudinaryFile = onCall(async (request) => {
-  const auth = request.auth;
-
-  if (!auth) {
+  if (!request.auth) {
     throw new Error("Authentication required");
   }
 
-  const { publicId } = request.data;
+  const {publicId} = request.data;
 
   if (!publicId) {
     throw new Error("Missing publicId");
   }
 
   try {
-    const result = await cloudinary.uploader.destroy(publicId, {
+    const rawResult = await cloudinary.uploader.destroy(publicId, {
       resource_type: "raw",
     });
 
+    const imageResult = await cloudinary.uploader.destroy(publicId, {
+      resource_type: "image",
+    });
+
+    console.log("RAW:", rawResult);
+    console.log("IMAGE:", imageResult);
+
     return {
       success: true,
-      result,
+      rawResult,
+      imageResult,
     };
   } catch (err) {
     console.error(err);

@@ -1,4 +1,13 @@
-const { v2: cloudinary } = require("cloudinary");
+const {v2: cloudinary} = require("cloudinary");
+const admin = require("firebase-admin");
+
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(
+      JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT),
+    ),
+  });
+}
 
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
@@ -8,11 +17,23 @@ cloudinary.config({
 
 module.exports = async (req, res) => {
   try {
-    const { publicId, secret } = req.body;
+    const authHeader = req.headers.authorization;
 
-    if (secret !== process.env.DELETE_SECRET) {
+    if (!authHeader) {
       return res.status(401).json({
-        error: "Unauthorized",
+        error: "No token provided",
+      });
+    }
+
+    const token = authHeader.replace("Bearer ", "");
+
+    await admin.auth().verifyIdToken(token);
+
+    const { publicId } = req.body;
+
+    if (!publicId) {
+      return res.status(400).json({
+        error: "Missing publicId",
       });
     }
 
@@ -21,9 +42,11 @@ module.exports = async (req, res) => {
     });
 
     return res.status(200).json(result);
-  } catch (error) {
+  } catch (err) {
+    console.error(err);
+
     return res.status(500).json({
-      error: error.message,
+      error: err.message,
     });
   }
 };

@@ -686,6 +686,7 @@ function vField(inputId, wrapId, fn) {
 }
 
 function handleSubmit() {
+  console.log("handleSubmit reached");
   let ok = true;
   ok = vField("f-fn", "w-fn", (v) => v.length > 0) && ok;
   ok = vField("f-ln", "w-ln", (v) => v.length > 0) && ok;
@@ -749,6 +750,9 @@ function handleSubmit() {
     amount: ticket.price * qty,
     qty,
   };
+
+  console.log("currentReg:", currentReg);
+  console.log("opening payment modal");
 
   openPayModal();
 }
@@ -1006,20 +1010,36 @@ function initPitchUpload() {
 renderPitchFiles();
 
 async function removePitchFile(i) {
-  const file = PitchFiles[i];
+ const file = pitchFiles[i];
 
-  console.log("Deleting:", file.publicId);
+  const user = firebase.auth().currentUser;
+
+   if (!user) {
+    alert("Please login first");
+    return;
+  }
+
+  const token = await user.getIdToken();
 
   const res = await fetch("/api/delete-file", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
       publicId: file.publicId,
-      secret: "wpsa-delete-2026-8f4j9x2k1m",
     }),
   });
+
+  const text = await res.text();
+
+  console.log(text);
+
+  if (res.ok) {
+  pitchFiles.splice(i, 1);
+  renderPitchFiles();
+}
 }
 function renderPitchFiles() {
   const list = document.getElementById("pitch-file-list");
@@ -1091,17 +1111,33 @@ async function removeAwardFile(i) {
 
   console.log("Deleting:", file.publicId);
 
+  if (!user) {
+    alert("Please login first");
+    return;
+  }
+
+  const token = await user.getIdToken();
+
+  const user = firebase.auth().currentUser;
+
+  if (!user) {
+    alert("Please login first");
+    return;
+  }
+
   const res = await fetch("/api/delete-file", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({
       publicId: file.publicId,
-      secret: "wpsa-delete-2026-8f4j9x2k1m",
     }),
   });
-  const data = await res.json();
+  const text = await res.text();
+
+  console.log(text);
 
   console.log("Delete response:", data);
 
@@ -1228,7 +1264,7 @@ async function submitAwardFiles() {
       formData.append("upload_preset", "wpsa_unsigned");
 
       const response = await fetch(
-        "https://api.cloudinary.com/v1_1/dxwjvhxa7/auto/upload",
+        "https://api.cloudinary.com/v1_1/dxwjvhxa7/raw/upload",
         {
           method: "POST",
           body: formData,
@@ -1263,7 +1299,7 @@ async function submitPitchFiles() {
 
   try {
     await DB.updateReg(currentReg.id, {
-      PitchFiles,
+      pitchFiles,
     });
 
     if (status) {
@@ -1306,7 +1342,7 @@ async function submitPitchFiles() {
       formData.append("upload_preset", "wpsa_unsigned");
 
       const response = await fetch(
-        "https://api.cloudinary.com/v1_1/dxwjvhxa7/auto/upload",
+        "https://api.cloudinary.com/v1_1/dxwjvhxa7/raw/upload",
         {
           method: "POST",
           body: formData,
