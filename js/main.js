@@ -982,6 +982,68 @@ async function addFiles_pitch(files) {
   renderPitchFiles();
 }
 
+function lockPitchUpload() {
+  const pitchBtn = document.getElementById("pitch-submit-btn");
+  const pitchDropZone = document.getElementById("drop-zone-pip");
+  const pitchStatus = document.getElementById("pitch-status");
+
+  pitchBtn.disabled = true;
+  pitchBtn.textContent = "Already Submitted";
+
+  pitchDropZone.style.pointerEvents = "none";
+  pitchDropZone.style.opacity = "0.5";
+  pitchDropZone.style.cursor = "not-allowed";
+
+  pitchStatus.textContent =
+    "✅ Pitch deck already submitted. Only one submission is allowed.";
+}
+
+function unlockPitchUpload() {
+  const pitchBtn = document.getElementById("pitch-submit-btn");
+  const pitchDropZone = document.getElementById("drop-zone-pip");
+  const pitchStatus = document.getElementById("pitch-status");
+
+  pitchBtn.disabled = false;
+  pitchBtn.textContent = "Submit Pitch Deck";
+
+  pitchDropZone.style.pointerEvents = "";
+  pitchDropZone.style.opacity = "";
+  pitchDropZone.style.cursor = "";
+
+  pitchStatus.textContent = "";
+}
+
+function lockAwardUpload() {
+  const awardBtn = document.getElementById("award-submit-btn");
+  const awardDropZone = document.getElementById("drop-zone-awd");
+  const awardStatus = document.getElementById("award-status");
+
+  awardBtn.disabled = true;
+  awardBtn.textContent = "Already Submitted";
+
+  awardDropZone.style.pointerEvents = "none";
+  awardDropZone.style.opacity = "0.5";
+  awardDropZone.style.cursor = "not-allowed";
+
+  awardStatus.textContent =
+    "✅ Presentation already submitted. Only one submission is allowed.";
+}
+
+function unlockAwardUpload() {
+  const awardBtn = document.getElementById("award-submit-btn");
+  const awardDropZone = document.getElementById("drop-zone-awd");
+  const awardStatus = document.getElementById("award-status");
+
+  awardBtn.disabled = false;
+  awardBtn.textContent = "Submit Presentation";
+
+  awardDropZone.style.pointerEvents = "";
+  awardDropZone.style.opacity = "";
+  awardDropZone.style.cursor = "";
+
+  awardStatus.textContent = "";
+}
+
 /* ═════════════════════════════════
    PITCH UPLOAD {only for startup/award ticket holders}{duplicate for awardees to upload for their categories}
    ═════════════════════════════════ */
@@ -1010,11 +1072,11 @@ function initPitchUpload() {
 renderPitchFiles();
 
 async function removePitchFile(i) {
- const file = pitchFiles[i];
+  const file = pitchFiles[i];
 
   const user = firebase.auth().currentUser;
 
-   if (!user) {
+  if (!user) {
     alert("Please login first");
     return;
   }
@@ -1033,13 +1095,25 @@ async function removePitchFile(i) {
   });
 
   const text = await res.text();
-
   console.log(text);
 
   if (res.ok) {
-  pitchFiles.splice(i, 1);
-  renderPitchFiles();
-}
+    pitchFiles.splice(i, 1);
+
+    await DB.updateReg(currentReg.id, {
+      pitchFiles: [...pitchFiles],
+    });
+
+    if (pitchFiles.length === 0) {
+      unlockPitchUpload();
+    }
+
+    currentReg.pitchFiles = [...pitchFiles];
+
+    renderPitchFiles();
+  } else {
+    alert("Failed to delete file.");
+  }
 }
 function renderPitchFiles() {
   const list = document.getElementById("pitch-file-list");
@@ -1111,19 +1185,14 @@ async function removeAwardFile(i) {
 
   console.log("Deleting:", file.publicId);
 
-  if (!user) {
-    alert("Please login first");
-    return;
-  }
-
-  const token = await user.getIdToken();
-
   const user = firebase.auth().currentUser;
 
   if (!user) {
     alert("Please login first");
     return;
   }
+
+  const token = await user.getIdToken();
 
   const res = await fetch("/api/delete-file", {
     method: "POST",
@@ -1135,15 +1204,25 @@ async function removeAwardFile(i) {
       publicId: file.publicId,
     }),
   });
+
   const text = await res.text();
-
   console.log(text);
-
-  console.log("Delete response:", data);
 
   if (res.ok) {
     AwardFiles.splice(i, 1);
+
+    await DB.updateReg(currentReg.id, {
+      AwardFiles: [...AwardFiles],
+    });
+
+    if (AwardFiles.length === 0) {
+      unlockAwardUpload();
+    }
+    currentReg.AwardFiles = [...AwardFiles];
+
     renderAwardFiles();
+  } else {
+    alert("Failed to delete file.");
   }
 }
 
@@ -1221,9 +1300,17 @@ async function submitAwardFiles() {
   const status = document.getElementById("award-status");
 
   try {
+    currentReg.AwardFiles = [...AwardFiles];
+
     await DB.updateReg(currentReg.id, {
-      AwardFiles,
+      AwardFiles: currentReg.AwardFiles,
     });
+
+    console.log("Saved pitchFiles:", AwardFiles);
+
+    const verify = await DB.getMyRegistration(currentReg.email);
+
+    console.log("Firebase returned:", verify.AwardFiles);
 
     if (status) {
       status.textContent = "✅ Award Presentation submitted successfully";
@@ -1234,6 +1321,11 @@ async function submitAwardFiles() {
     if (status) {
       status.textContent = "❌ Submission failed";
     }
+  }
+
+  if (AwardFiles.length > 0) {
+    alert("Only one presentation submission is allowed.");
+    return;
   }
 
   for (const f of pendingAwardFiles) {
@@ -1288,9 +1380,16 @@ async function submitAwardFiles() {
     renderAwardFiles();
   }
 
+  currentReg.AwardFiles = [...AwardFiles];
+
   await DB.updateReg(currentReg.id, {
-    AwardFiles,
+    AwardFiles: currentReg.AwardFiles,
   });
+  console.log("Saved AwardFiles:", AwardFiles);
+
+  const verify = await DB.getMyRegistration(currentReg.email);
+
+  console.log("Firebase returned:", verify.AwardFiles);
 }
 async function submitPitchFiles() {
   if (!currentReg) return;
@@ -1298,9 +1397,20 @@ async function submitPitchFiles() {
   const status = document.getElementById("pitch-status");
 
   try {
+    currentReg.pitchFiles = [...pitchFiles];
+
     await DB.updateReg(currentReg.id, {
-      pitchFiles,
+      pitchFiles: currentReg.pitchFiles,
     });
+
+    lockAwardUpload();
+    pendingAwardFiles = [];
+
+    console.log("Saved pitchFiles:", pitchFiles);
+
+    const verify = await DB.getMyRegistration(currentReg.email);
+
+    console.log("Firebase returned:", verify.pitchFiles);
 
     if (status) {
       status.textContent = "✅ Pitch deck submitted successfully";
@@ -1311,6 +1421,11 @@ async function submitPitchFiles() {
     if (status) {
       status.textContent = "❌ Submission failed";
     }
+  }
+
+  if (pitchFiles.length > 0) {
+    alert("Only one pitch deck submission is allowed.");
+    return;
   }
 
   for (const f of pendingPitchFiles) {
@@ -1374,9 +1489,20 @@ async function submitPitchFiles() {
     }
   }
 
+  currentReg.pitchFiles = [...pitchFiles];
+
   await DB.updateReg(currentReg.id, {
-    pitchFiles,
+    pitchFiles: currentReg.pitchFiles,
   });
+
+  lockPitchUpload();
+  pendingPitchFiles = [];
+
+  console.log("Saved pitchFiles:", pitchFiles);
+
+  const verify = await DB.getMyRegistration(currentReg.email);
+
+  console.log("Firebase returned:", verify.pitchFiles);
 }
 
 /* ═════════════════════════════════
@@ -1889,6 +2015,16 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       renderPitchFiles();
       renderAwardFiles();
+
+      const pitchStatus = document.getElementById("pitch-status");
+
+      if (pitchFiles.length > 0) {
+        lockPitchUpload();
+      }
+
+      if (AwardFiles.length > 0) {
+        lockAwardUpload();
+      }
 
       if (reg.ticket === "startup") {
         document.getElementById("pitch-panel")?.classList.add("show");
