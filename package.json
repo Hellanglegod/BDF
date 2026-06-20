@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/Hellanglegod/BDF#readme",
   "dependencies": {
+    "@vercel/speed-insights": "^2.0.0",
     "cloudinary": "^2.10.0",
     "firebase-admin": "^13.10.0"
   }
