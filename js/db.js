@@ -1,11 +1,11 @@
 /* ═══════════════════════════════════════════════════
-   WPSA 2026 · db.js  — Unified Data Layer
-   ───────────────────────────────────────────────────
-   FIX-1  saveReg uses .doc(id).set() — preserves WPSA26-XXX id
-   FIX-2  Single log collection: 'loginLogs' everywhere
-   FIX-3  All timestamps stored as ISO strings
-   FIX-4  Full localStorage fallback for every operation
-   ═══════════════════════════════════════════════════ */
+    WPSA 2026 · db.js  — Unified Data Layer
+    ───────────────────────────────────────────────────
+    FIX-1  saveReg uses .doc(id).set() — preserves WPSA26-XXX id
+    FIX-2  Single log collection: 'loginLogs' everywhere
+    FIX-3  All timestamps stored as ISO strings
+    FIX-4  Full localStorage fallback for every operation
+    ═══════════════════════════════════════════════════ */
 
 /* ── localStorage helper ── */
 const LS = {
@@ -114,8 +114,8 @@ function _init() {
 }
 
 /* ══════════════════════════════════════════
-   PUBLIC DB OBJECT
-   ══════════════════════════════════════════ */
+    PUBLIC DB OBJECT
+    ══════════════════════════════════════════ */
 const DB = {
   isFirebase() {
     _init();
@@ -233,8 +233,8 @@ const DB = {
   },
 
   /* ── LOGS  ──
-     FIX-2: Single collection 'loginLogs' everywhere.
-     Removed the separate global addLoginLog() — use DB.addLog() exclusively.  */
+      FIX-2: Single collection 'loginLogs' everywhere.
+      Removed the separate global addLoginLog() — use DB.addLog() exclusively.  */
 
   async addLog(entry) {
     _init();
@@ -273,6 +273,30 @@ const DB = {
       }
     }
     return LS.get("wpsa_login_logs") || [];
+  },
+
+  async getMyRegistration(email) {
+    _init();
+
+    if (!_ready || !email) return null;
+
+    try {
+      const snap = await _db
+        .collection("registrations")
+        .where("email", "==", email.toLowerCase())
+        .limit(1)
+        .get();
+
+      if (snap.empty) return null;
+
+      return {
+        ...snap.docs[0].data(),
+        id: snap.docs[0].id,
+      };
+    } catch (e) {
+      console.error("[DB] getMyRegistration failed:", e);
+      return null;
+    }
   },
 
   async clearLogs() {

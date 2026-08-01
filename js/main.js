@@ -974,7 +974,7 @@ const PITCH_MAX_MB = 50;
 
 function initPitchUpload() {
   const zone = document.getElementById("drop-zone-pip");
-  const input = document.getElementById("pitch-input-pip");
+  const input = document.getElementById("pitch-input");
   if (!zone || !input) return;
   zone.addEventListener("click", () => input.click());
   zone.addEventListener("dragover", (e) => {
@@ -1011,6 +1011,8 @@ async function addFiles_pitch(files) {
 
       formData.append("file", f);
 
+      formData.append("folder", "wpsa/pitches");
+
       formData.append("upload_preset", "wpsa_unsigned");
 
       const response = await fetch(
@@ -1022,9 +1024,8 @@ async function addFiles_pitch(files) {
       );
 
       const data = await response.json();
-
+      if (data.error) throw new Error(data.error.message);
       console.log("Uploaded:", data);
-
       pitchFiles.push({
         name: f.name,
         size: f.size,
@@ -1086,7 +1087,7 @@ const AWARD_MAX_MB = 50;
 
 function initAwardUpload() {
   const zone = document.getElementById("drop-zone-awd");
-  const input = document.getElementById("pitch-input-awd");
+  const input = document.getElementById("award-input");
   if (!zone || !input) return;
   zone.addEventListener("click", () => input.click());
   zone.addEventListener("dragover", (e) => {
@@ -1139,6 +1140,7 @@ async function addFiles_awd(files) {
       );
 
       const data = await response.json();
+      if (data.error) throw new Error(data.error.message);
 
       AwardFiles.push({
         name: f.name,
