@@ -136,22 +136,27 @@ const DB = {
   /* ── REGISTRATIONS ── */
 
   async getRegs() {
+    console.trace("getRegs called");
+
     _init();
+
     if (_ready) {
       try {
         const snap = await _db
           .collection("registrations")
           .orderBy("timestamp", "desc")
           .get();
-        return snap.docs.map((d) => ({ ...d.data(), id: d.id }));
+
+        return snap.docs.map((d) => ({
+          ...d.data(),
+          id: d.id,
+        }));
       } catch (e) {
         console.error("[DB] getRegs failed:", e);
       }
     }
-    /* FIX-4: localStorage fallback */
-    return (LS.get("wpsa_regs") || []).sort((a, b) =>
-      b.timestamp > a.timestamp ? 1 : -1,
-    );
+
+    return [];
   },
 
   async saveReg(reg) {
@@ -230,6 +235,30 @@ const DB = {
     return (LS.get("wpsa_regs") || []).filter(
       (r) => (r.email || "").toLowerCase() === lc,
     );
+  },
+
+  async getMyRegistration(email) {
+    _init();
+
+    if (!_ready || !email) return null;
+
+    try {
+      const snap = await _db
+        .collection("registrations")
+        .where("email", "==", email)
+        .limit(1)
+        .get();
+
+      if (snap.empty) return null;
+
+      return {
+        ...snap.docs[0].data(),
+        id: snap.docs[0].id,
+      };
+    } catch (e) {
+      console.error("[DB] getMyRegistration failed:", e);
+      return null;
+    }
   },
 
   /* ── LOGS  ──
@@ -402,44 +431,4 @@ document.addEventListener("DOMContentLoaded", () => {
     `%c[DB] ${s.backend}`,
     `color:${s.ready ? "#4caf82" : "#f5a020"};font-weight:bold`,
   );
-});
-
-const pitchInput = document.getElementById("pitch-input");
-
-pitchInput?.addEventListener("change", async (e) => {
-  const files = [...e.target.files];
-
-  const user = auth.currentUser;
-
-  if (!user || !files.length) return;
-
-  const status = document.getElementById("pitch-status");
-
-  status.textContent = "Uploading...";
-
-  try {
-    for (const file of files) {
-      const ref = storage
-        .ref()
-        .child(`pitch-decks/${user.uid}/${Date.now()}-${file.name}`);
-
-      await ref.put(file);
-
-      const url = await ref.getDownloadURL();
-
-      await db.collection("pitch_submissions").add({
-        uid: user.uid,
-        email: user.email,
-        fileName: file.name,
-        fileUrl: url,
-        uploadedAt: firebase.firestore.FieldValue.serverTimestamp(),
-      });
-    }
-
-    status.textContent = "Pitch uploaded successfully.";
-  } catch (err) {
-    console.error(err);
-
-    status.textContent = "Upload failed.";
-  }
 });

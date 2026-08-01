@@ -8,6 +8,7 @@ firebase-debug.log*
 firebase-debug.*.log*
 node_modules/
 serviceAccountKey.json
+.env.local
 .env
 .DS_Store
 Thumbs.db
@@ -72,3 +73,5 @@ node_modules/
 
 # dataconnect generated files
 .dataconnect
+.vercel
+.env*

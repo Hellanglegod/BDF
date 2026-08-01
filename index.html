@@ -669,7 +669,7 @@
               </div>
             </div>
             <div class="submit-wrap">
-              <button class="btn btn-gold btn-full" id="submit-btn">Proceed to Payment →</button>
+              <button class="btn btn-gold btn-full" id="submit-btn" onclick="handleSubmit()">Proceed to Payment →</button>
               <p class="submit-note">Nomination deadline: 2nd May 2026 · Award Ceremony: 23rd May 2026 · NSE Mumbai</p>
             </div>
           </div>
@@ -767,6 +767,7 @@
         <input type="file" id="pitch-input" accept=".pdf,.ppt,.pptx,.key,.odp,.pps,.ppsx" multiple style="display:none;"/>
         <div class="pitch-files" id="pitch-file-list"></div>
         <p class="pitch-status" id="pitch-status"></p>
+        <button class = "btn btn-gold btn-sm" id="pitch-submit-btn"> Submit Pitch Deck </button>
         <p style="font-size:.8125rem;color:var(--txt4);margin-top:14px;">Upload deadline: 15th May 2026. You will receive a confirmation once your submission is reviewed by the team.</p>
       </div>
     </div>
@@ -782,11 +783,15 @@
           <div class="drop-main-awd">Drag &amp; drop your presentation here</div>
           <div class="drop-sub-awd">or click to browse files</div>
         </div>
+        
         <input type="file" id="award-input" accept=".pdf,.ppt,.pptx,.key,.odp,.pps,.ppsx" multiple style="display:none;"/>
         <div class="award-files" id="award-file-list"></div>
         <p class="award-status" id="award-status"></p>
+        <button class = "btn btn-gold btn-sm" id="award-submit-btn"> Submit Presentation </button>
         <p style="font-size:.8125rem;color:var(--txt4);margin-top:14px;">Upload deadline: 15th May 2026. You will receive a confirmation once your submission is reviewed by the team.</p>
       </div>
+      
+      
     </div>
 
   </div><!-- /container -->
@@ -807,6 +812,12 @@
 <div id="auth-loading">
   <div class="loader"></div>
 </div>
+
+<!-- Vercel Speed Insights -->
+<script>
+  window.si = window.si || function () { (window.siq = window.siq || []).push(arguments); };
+</script>
+<script defer src="/_vercel/speed-insights/script.js"></script>
 
 <!-- Firebase SDK -->
 
